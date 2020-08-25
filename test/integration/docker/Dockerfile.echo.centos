@@ -1,0 +1,66 @@
+# Define global args
+ARG FUNCTION_DIR="/home/app/"
+ARG RUNTIME_VERSION
+ARG DISTRO_VERSION
+
+# Stage 1 - bundle base image + runtime
+# Grab a fresh copy of the image and install Node
+FROM centos:${DISTRO_VERSION} AS node-centos
+# Include global arg in this stage of the build
+ARG RUNTIME_VERSION
+# Install NodeJS
+RUN curl -sL https://rpm.nodesource.com/setup_${RUNTIME_VERSION}.x | bash - && \
+    yum install -y nodejs
+
+
+# Stage 2 - build function and dependencies
+FROM node-centos AS build-image
+# Install aws-lambda-cpp build dependencies
+RUN yum install -y \
+        tar \
+        gzip \
+        make \
+        autoconf \
+        automake \
+        libtool \
+        libcurl-devel \
+        gcc-c++
+# Install CMake > 3.9
+RUN curl -o cmake3.tar.gz https://cmake.org/files/v3.10/cmake-3.10.0.tar.gz && \
+    tar -xzf cmake3.tar.gz && \
+    cd cmake-3.10.0 && \
+    ./bootstrap && \
+    make && \
+    make install
+
+# Include global arg in this stage of the build
+ARG FUNCTION_DIR
+# Create function directory
+RUN mkdir -p ${FUNCTION_DIR}
+
+# Copy & build Runtime Interface Client package (as we're installing it from a local filesystem source)
+WORKDIR ${FUNCTION_DIR}/deps/aws-lambda-ric
+COPY . .
+RUN make build && \
+    npm run test:unit
+
+# Copy function code
+COPY test/integration/test-handlers/echo/* ${FUNCTION_DIR}
+# Install the function's dependencies
+WORKDIR ${FUNCTION_DIR}
+RUN npm install
+
+
+# Stage 3 - final runtime image
+# Grab a fresh copy of the Node image
+FROM node-centos
+
+# Include global arg in this stage of the build
+ARG FUNCTION_DIR
+# Set working directory to function root directory
+WORKDIR ${FUNCTION_DIR}
+# Copy in the built dependencies
+COPY --from=build-image ${FUNCTION_DIR} ${FUNCTION_DIR}
+
+ENTRYPOINT [ "/usr/bin/npx", "aws-lambda-ric" ]
+CMD [ "index.handler" ]

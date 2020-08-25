@@ -1,0 +1,39 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": ["src/tsconfig.json", "test/unit/tsconfig.json"]
+  },
+  "plugins": ["@typescript-eslint"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended",
+    "prettier",
+    "prettier/@typescript-eslint"
+  ],
+  "env": {
+    "node": true,
+    "es6": true
+  },
+  "rules": {
+    "@typescript-eslint/restrict-plus-operands": "error",
+    "@typescript-eslint/interface-name-prefix": "off",
+    "no-async-promise-executor": "warn",
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/indent": "off",
+    "@typescript-eslint/ban-types": "warn",
+    "no-console": "warn",
+    "no-shadow": "warn"
+  },
+  "overrides": [
+    {
+      "files":["test/**/*.ts"],
+      "rules": {
+        "no-console": "off",
+        "@typescript-eslint/no-explicit-any": "off",
+        "no-prototype-builtins": "off",
+        "strictBindCallApply": "off"
+      }
+    }
+  ]
+}

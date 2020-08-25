@@ -1,0 +1,84 @@
+{
+  "name": "aws-lambda-ric",
+  "version": "1.0.0",
+  "description": "AWS Lambda Runtime Interface Client for NodeJs",
+  "homepage": "https://github.com/aws/aws-lambda-nodejs-runtime-interface-client",
+  "main": "lib/index.js",
+  "gypfile": true,
+  "scripts": {
+    "archive": "npx rimraf aws-lambda-ric-*.tgz && npm install && npm run build && npm pack",
+    "clean": "npx rimraf {build, node_modules} && npx rimraf deps/{build_complete.txt, aws-lambda-cpp, curl}",
+    "copy-files": "mkdir -p lib/RuntimeClient && cp src/RuntimeClient/runtime-client.cc lib/RuntimeClient/runtime-client.cc",
+    "update-deps": "./scripts/update_dependencies.sh",
+    "preinstall": "./scripts/preinstall.sh",
+    "postinstall": "./scripts/postinstall.sh",
+    "build": "npx rimraf lib && tsc -b src",
+    "build:gyp": "node-gyp rebuild",
+    "postbuild": "npm run copy-files",
+    "format": "npm run format:src && npm run format:test",
+    "format:src": "prettier --check \"src/**/*.ts\" --write",
+    "format:test": "prettier --check \"test/**/*.ts\" --write",
+    "lint": "eslint --ext \".ts,.js\" src",
+    "test": "npm run test:unit",
+    "test:unit": "ts-mocha test/unit/**/*.test.ts --reporter ./test/utils/StdoutReporter -p ./test/unit/tsconfig.json",
+    "test:unit:watch": "ts-mocha test/unit/**/*.test.ts --reporter ./test/utils/StdoutReporter --watch-extensions ts --watch --watch-files src, test/unit/**/*.ts -p ./test/unit/tsconfig.json",
+    "test:coverage": "nyc npm run test:unit",
+    "tsc": "tsc -b src",
+    "tsc:watch": "tsc -b src --watch",
+    "refresh": "rm -rf ./node_modules ./package-lock.json && npm install",
+    "precommit": "npm run lint"
+  },
+  "author": "AWS Lambda",
+  "license": "Apache-2.0",
+  "bin": {
+    "aws-lambda-ric": "bin/index.js"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run precommit"
+    }
+  },
+  "nyc": {
+    "extension": [
+      ".ts"
+    ],
+    "reporter": [
+      "text",
+      "lcov"
+    ],
+    "check-coverage": true,
+    "branches": 65,
+    "lines": 75,
+    "functions": 65,
+    "statements": 75
+  },
+  "dependencies": {
+    "node-addon-api": "3.0.2",
+    "node-gyp": "7.1.2"
+  },
+  "devDependencies": {
+    "@types/dockerode": "2.5.34",
+    "@types/fs-extra": "9.0.1",
+    "@types/js-yaml": "3.12.5",
+    "@types/mocha": "8.0.3",
+    "@types/node": "^14.11.5",
+    "@types/tar-fs": "2.0.0",
+    "@typescript-eslint/eslint-plugin": "4.4.0",
+    "@typescript-eslint/parser": "4.4.0",
+    "dockerode": "3.2.1",
+    "eslint": "7.10.0",
+    "eslint-config-prettier": "6.12.0",
+    "eslint-plugin-prettier": "3.1.4",
+    "fast-glob": "3.2.4",
+    "fs-extra": "9.0.1",
+    "js-yaml": "3.14.0",
+    "mocha": "8.2.0",
+    "prettier": "2.1.2",
+    "should": "13.2.3",
+    "tar-fs": "2.1.0",
+    "ts-mocha": "7.0.0",
+    "typescript": "4.0.3",
+    "nyc": "^15.1.0",
+    "husky": "4.3.0"
+  }
+}

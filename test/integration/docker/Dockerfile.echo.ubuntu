@@ -1,0 +1,76 @@
+# Define global args
+ARG FUNCTION_DIR="/home/app/"
+ARG RUNTIME_VERSION
+ARG DISTRO_VERSION
+
+# Stage 1 - bundle base image + runtime
+# Grab a fresh copy of the image and install Node
+FROM ubuntu:${DISTRO_VERSION} AS node-ubuntu
+# Non-interactive mode
+ENV DEBIAN_FRONTEND=noninteractive
+# Install NodeJS
+ARG RUNTIME_VERSION
+RUN apt-get update && \
+    apt-get install -y \
+        curl && \
+    curl -sL https://deb.nodesource.com/setup_${RUNTIME_VERSION}.x | bash - && \
+    apt-get install -y nodejs
+
+
+# Stage 2 - build function and dependencies
+FROM node-ubuntu AS build-image
+# Install aws-lambda-cpp build dependencies
+RUN apt-get update && \
+    apt-get install -y \
+        g++ \
+        gcc \
+        tar \
+        curl \
+        gzip \
+        make \
+        cmake \
+        autoconf \
+        automake \
+        libtool \
+        libcurl4-openssl-dev
+# Install CMake > 3.9 for Ubuntu 16.04
+RUN if [ "$(printf '%s\n' "3.9.0" "$(cmake --version | head -n1 | tr -dc '0-9.')" | sort -V | head -n1)" != "3.9.0" ]; then \
+        curl -o cmake3.tar.gz https://cmake.org/files/v3.10/cmake-3.10.0.tar.gz && \
+        tar -xzf cmake3.tar.gz && \
+        cd cmake-3.10.0 && \
+        ./bootstrap && \
+        make && \
+        make install \
+    ; fi
+
+# Include global arg in this stage of the build
+ARG FUNCTION_DIR
+# Create function directory
+RUN mkdir -p ${FUNCTION_DIR}
+
+# Copy & build Runtime Interface Client package (as we're installing it from a local filesystem source)
+WORKDIR ${FUNCTION_DIR}/deps/aws-lambda-ric
+COPY . .
+RUN make build && \
+    npm run test:unit
+
+# Copy function code
+COPY test/integration/test-handlers/echo/* ${FUNCTION_DIR}
+# Install the function's dependencies
+WORKDIR ${FUNCTION_DIR}
+RUN npm install
+
+
+# Stage 3 - final runtime image
+# Grab a fresh copy of the Node image
+FROM node-ubuntu
+
+# Include global arg in this stage of the build
+ARG FUNCTION_DIR
+# Set working directory to function root directory
+WORKDIR ${FUNCTION_DIR}
+# Copy in the built dependencies
+COPY --from=build-image ${FUNCTION_DIR} ${FUNCTION_DIR}
+
+ENTRYPOINT [ "/usr/bin/npx", "aws-lambda-ric" ]
+CMD [ "index.handler" ]
