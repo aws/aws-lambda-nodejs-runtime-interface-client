@@ -1,0 +1,20 @@
+name: test-on-push-and-pr
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ '*' ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up node
+      uses: actions/setup-node@v1
+      with:
+        node-version: '12'
+    - name: Run 'pr' target
+      run: make pr

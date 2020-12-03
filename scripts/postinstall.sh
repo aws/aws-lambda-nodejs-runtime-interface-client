@@ -21,6 +21,6 @@ if test "${current_path#*$node_modules_path}" != "$current_path" || [ "$BUILD" !
 
     # Clean up source dependencies
     rm -rf "$deps_path"/patches
-    rm -rf "$deps_path"/aws-lambda-cpp*
-    rm -rf "$deps_path"/curl*
+    rm -rf "$deps_path"/aws-lambda-cpp*[^gz]$
+    rm -rf "$deps_path"/curl*[^gz]$
 fi

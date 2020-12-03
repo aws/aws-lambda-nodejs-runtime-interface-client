@@ -41,7 +41,7 @@ dev: init test
 
 # Verifications to run before sending a pull request
 .PHONY: pr
-pr: dev test-smoke
+pr: build dev test-smoke
 
 .PHONY: clean
 clean:
