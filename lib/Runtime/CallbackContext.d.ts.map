@@ -1,0 +1,1 @@
+{"version":3,"file":"CallbackContext.d.ts","sourceRoot":"","sources":["../../src/Runtime/CallbackContext.ts"],"names":[],"mappings":"AACA,8EAA8E;AAK9E,OAAO,EAEL,gBAAgB,EAEhB,gBAAgB,EACjB,MAAM,WAAW,CAAC;AAEnB,OAAO,EAAE,cAAc,EAAE,MAAM,kBAAkB,CAAC;AAElD;;;;;;;;;;;;;;;GAeG;AACH,eAAO,MAAM,KAAK,WACR,cAAc,MAClB,MAAM,gBACI,MAAM,IAAI,KACvB,CAAC,gBAAgB,EAAE,gBAAgB,CAGrC,CAAC"}
