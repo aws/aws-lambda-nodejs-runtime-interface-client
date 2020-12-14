@@ -2,11 +2,7 @@
 # Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 set -e
 
-if [ "$(uname)" = "Darwin" ]; then
-    echo "aws-lambda-cpp does not build on OS X. Skipping the postinstall step."
-else
-    npm run build:gyp
-fi
+npm run build:gyp
 
 # If the path of this file ends in "node_modules/aws-lambda-ric/scripts"
 # the package is being installed as a dependency and we can clean the deps folder.

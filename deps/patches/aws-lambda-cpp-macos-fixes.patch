@@ -1,0 +1,22 @@
+diff --git a/include/backward.h b/include/backward.h
+index e065783..9e369a6 100644
+--- a/include/backward.h
++++ b/include/backward.h
+@@ -43,7 +43,7 @@
+
+ // You can define one of the following (or leave it to the auto-detection):
+ //
+-#    define BACKWARD_SYSTEM_LINUX
++// #define BACKWARD_SYSTEM_LINUX
+ //	- specialization for linux
+ //
+ // #define BACKWARD_SYSTEM_DARWIN
+@@ -3057,7 +3057,7 @@ public:
+         if (st.size() == 0) {
+             return;
+         }
+-        _symbols.reset(backtrace_symbols(st.begin(), st.size()));
++        _symbols.reset(backtrace_symbols(st.begin(), (int)st.size()));
+     }
+
+     ResolvedTrace resolve(ResolvedTrace trace)
