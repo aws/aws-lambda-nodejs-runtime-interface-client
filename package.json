@@ -4,17 +4,10 @@
   "description": "AWS Lambda Runtime Interface Client for NodeJs",
   "homepage": "https://github.com/aws/aws-lambda-nodejs-runtime-interface-client",
   "main": "lib/index.js",
-  "gypfile": true,
   "scripts": {
     "archive": "npx rimraf aws-lambda-ric-*.tgz && npm install && npm run build && npm pack",
-    "clean": "npx rimraf {build, node_modules} && npx rimraf deps/{build_complete.txt, aws-lambda-cpp, curl}",
-    "copy-files": "mkdir -p lib/RuntimeClient && cp src/RuntimeClient/runtime-client.cc lib/RuntimeClient/runtime-client.cc",
-    "update-deps": "./scripts/update_dependencies.sh",
-    "preinstall": "./scripts/preinstall.sh",
-    "postinstall": "./scripts/postinstall.sh",
+    "clean": "npx rimraf {build, node_modules}",
     "build": "npx rimraf lib && tsc -b src",
-    "build:gyp": "node-gyp rebuild",
-    "postbuild": "npm run copy-files",
     "format": "npm run format:src && npm run format:test",
     "format:src": "prettier --check \"src/**/*.ts\" --write",
     "format:test": "prettier --check \"test/**/*.ts\" --write",
@@ -53,8 +46,7 @@
     "statements": 75
   },
   "dependencies": {
-    "node-addon-api": "3.0.2",
-    "node-gyp": "7.1.2"
+    "node-addon-api": "3.0.2"
   },
   "devDependencies": {
     "@types/dockerode": "2.5.34",
@@ -71,14 +63,14 @@
     "eslint-plugin-prettier": "3.1.4",
     "fast-glob": "3.2.4",
     "fs-extra": "9.0.1",
+    "husky": "4.3.0",
     "js-yaml": "3.14.0",
     "mocha": "8.2.0",
+    "nyc": "^15.1.0",
     "prettier": "2.1.2",
     "should": "13.2.3",
     "tar-fs": "2.1.0",
     "ts-mocha": "7.0.0",
-    "typescript": "4.0.3",
-    "nyc": "^15.1.0",
-    "husky": "4.3.0"
+    "typescript": "4.0.3"
   }
 }
