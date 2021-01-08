@@ -23,10 +23,6 @@ test-smoke: setup-codebuild-agent
 test-integ: setup-codebuild-agent
 	CODEBUILD_IMAGE_TAG=codebuild-agent test/integration/codebuild-local/test_all.sh test/integration/codebuild
 
-.PHONY: copy-files
-copy-files:
-	npm run copy-files
-
 .PHONY: install
 install:
 	BUILD=$(BUILD) npm install
@@ -48,7 +44,7 @@ clean:
 	npm run clean
 
 .PHONY: build
-build: copy-files
+build:
 	make install BUILD=1
 	npm run build
 
