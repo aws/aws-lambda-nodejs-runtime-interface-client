@@ -95,10 +95,9 @@ export default class RuntimeClient implements IRuntimeClient {
     id: string,
     callback: () => void
   ): void {
-    const bodyString = _trySerializeResponse(response);
     this._post(
       `/2018-06-01/runtime/invocation/${id}/response`,
-      bodyString,
+      response,
       {},
       callback
     );
@@ -130,11 +129,10 @@ export default class RuntimeClient implements IRuntimeClient {
    */
   postInvocationError(error: unknown, id: string, callback: () => void): void {
     const response = Errors.toRuntimeResponse(error);
-    const bodyString = _trySerializeResponse(response);
     const xrayString = XRayError.toFormatted(error);
     this._post(
       `/2018-06-01/runtime/invocation/${id}/error`,
-      bodyString,
+      response,
       {
         [ERROR_TYPE_HEADER]: response.errorType,
         [XRAY_ERROR_CAUSE]: xrayString
