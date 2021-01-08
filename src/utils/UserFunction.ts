@@ -101,7 +101,7 @@ function _loadUserApp(
     return _tryRequire(appRoot, moduleRoot, module);
   } catch (e) {
     if (e instanceof SyntaxError) {
-      throw new UserCodeSyntaxError(e.message);
+      throw new UserCodeSyntaxError(<any>e);
     } else if (e.code !== undefined && e.code === "MODULE_NOT_FOUND") {
       throw new ImportModuleError(e);
     } else {

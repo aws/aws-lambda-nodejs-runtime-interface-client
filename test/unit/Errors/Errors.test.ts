@@ -16,7 +16,21 @@ class CircularError extends Error {
   }
 }
 
-describe("Formatting Error Logging", () => {
+class ExtendedError extends Error {
+  code?: number;
+  customProperty?: string;
+
+  constructor(message?: string) {
+    super(message);
+
+    this.name = "ExtendedError";
+    this.stack = "ExtendedErrorStack";
+    this.code = 100;
+    this.customProperty = "ExtendedErrorCustomProperty";
+  }
+}
+
+describe("Formatting CircularError Logging", () => {
   it("should fall back to a minimal error format when an exception occurs", () => {
     const error = new CircularError("custom message");
     error.backlink = error;
@@ -26,6 +40,22 @@ describe("Formatting Error Logging", () => {
     loggedError.should.have.property("errorMessage", "custom message");
     loggedError.should.have.property("trace");
     loggedError.trace.length.should.be.aboveOrEqual(1);
+  });
+});
+
+describe("Formatting Error Logging", () => {
+  it("should fall back to an extended error format when an exception occurs", () => {
+    const error = new ExtendedError("custom message");
+
+    const loggedError = JSON.parse(Errors.toFormatted(error).trim());
+    loggedError.should.have.property("errorType", "ExtendedError");
+    loggedError.should.have.property("errorMessage", "custom message");
+    loggedError.should.have.property("stack", ["ExtendedErrorStack"]);
+    loggedError.should.have.property("code", 100);
+    loggedError.should.have.property(
+      "customProperty",
+      "ExtendedErrorCustomProperty"
+    );
   });
 });
 
