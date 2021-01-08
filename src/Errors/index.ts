@@ -81,17 +81,18 @@ export const toFormatted = (error: unknown): string => {
  * user-provided enumerable properties.
  */
 function _withEnumerableProperties(error: any) {
-  if (error instanceof ExtendedError) {
+  if (error instanceof Error) {
+    const extendedError: ExtendedError = <ExtendedError>(<any>error);
     const ret: any = Object.assign(
       {
-        errorType: error.name,
-        errorMessage: error.message,
-        code: error.code,
+        errorType: extendedError.name,
+        errorMessage: extendedError.message,
+        code: extendedError.code,
       },
-      error
+      extendedError
     );
-    if (typeof error.stack == "string") {
-      ret.stack = error.stack.split("\n");
+    if (typeof extendedError.stack == "string") {
+      ret.stack = extendedError.stack.split("\n");
     }
     return ret;
   } else {
