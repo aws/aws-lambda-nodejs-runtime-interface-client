@@ -11,13 +11,6 @@ export interface InvocationResponse {
   headers: IncomingHttpHeaders;
 }
 
-export interface NativeClient {
-  initializeClient: (userAgent: string) => void;
-  done: (id: string, bodyString: string) => void;
-  error: (id: string, bodyString: string, xrayString: string) => void;
-  next: () => Promise<InvocationResponse>;
-}
-
 export enum INVOKE_HEADER {
   ClientContext = "lambda-runtime-client-context",
   CognitoIdentity = "lambda-runtime-cognito-identity",
