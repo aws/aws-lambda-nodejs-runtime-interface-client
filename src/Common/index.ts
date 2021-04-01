@@ -78,3 +78,7 @@ export type HandlerFunction = (
   data: IEnvironmentData & IHeaderData,
   callback: CallbackFunction
 ) => PromiseLike<unknown> | unknown;
+
+export function isHandlerFunction(value: any): value is HandlerFunction {
+  return typeof value === "function";
+}
