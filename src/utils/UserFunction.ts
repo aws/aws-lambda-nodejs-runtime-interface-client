@@ -112,15 +112,14 @@ function _loadUserApp(
 
 async function _initializeFunction(userApp: any): Promise<void> {
   try {
-     await userApp.initializeFunction();
+    await userApp.initializeFunction();
   } catch (e) {
-      if (e instanceof TypeError) {
-          // initializeFunction lifecycle hook not implemented
-          return;
-      }
-      else {
-          throw e;
-      }
+    if (e instanceof TypeError) {
+      // initializeFunction lifecycle hook not implemented
+      return;
+    } else {
+      throw e;
+    }
   }
 }
 
