@@ -110,6 +110,20 @@ function _loadUserApp(
   }
 }
 
+async function _initializeFunction(userApp: any): Promise<void> {
+  try {
+     await userApp.initializeFunction();
+  } catch (e) {
+      if (e instanceof TypeError) {
+          // initializeFunction lifecycle hook not implemented
+          return;
+      }
+      else {
+          throw e;
+      }
+  }
+}
+
 function _throwIfInvalidHandler(fullHandlerString: string): void {
   if (fullHandlerString.includes(RELATIVE_PATH_SUBSTRING)) {
     throw new MalformedHandlerName(
@@ -137,10 +151,10 @@ function _throwIfInvalidHandler(fullHandlerString: string): void {
  *       for traversing up the filesystem '..')
  *   Errors for scenarios known by the runtime, will be wrapped by Runtime.* errors.
  */
-export const load = function (
+export const load = async function (
   appRoot: string,
   fullHandlerString: string
-): HandlerFunction {
+): Promise<HandlerFunction> {
   _throwIfInvalidHandler(fullHandlerString);
 
   const [moduleRoot, moduleAndHandler] = _moduleRootAndHandler(
@@ -149,6 +163,9 @@ export const load = function (
   const [module, handlerPath] = _splitHandlerString(moduleAndHandler);
 
   const userApp = _loadUserApp(appRoot, moduleRoot, module);
+
+  await _initializeFunction(userApp);
+
   const handlerFunc = _resolveHandler(userApp, handlerPath);
 
   if (!handlerFunc) {
