@@ -25,7 +25,7 @@ else
 
     (
         # Build Curl
-        cd curl-curl-$CURL_VERSION && \
+        cd curl-$CURL_VERSION && \
             ./buildconf && \
             ./configure \
                 --prefix "$ARTIFACTS_DIR" \
