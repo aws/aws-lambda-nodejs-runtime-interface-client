@@ -1,6 +1,6 @@
 {
   "name": "aws-lambda-ric",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "AWS Lambda Runtime Interface Client for NodeJs",
   "homepage": "https://github.com/aws/aws-lambda-nodejs-runtime-interface-client",
   "main": "lib/index.js",
