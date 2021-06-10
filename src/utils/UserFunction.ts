@@ -64,7 +64,11 @@ function _resolveHandler(object: any, nestedProperty: string): any {
  * @return bool
  */
 function _canLoadAsFile(modulePath: string): boolean {
-  return fs.existsSync(modulePath) || fs.existsSync(modulePath + ".js");
+  return (
+    fs.existsSync(modulePath) ||
+    fs.existsSync(modulePath + ".js") ||
+    fs.existsSync(modulePath + ".ts")
+  );
 }
 
 /**
@@ -143,9 +147,8 @@ export const load = function (
 ): HandlerFunction {
   _throwIfInvalidHandler(fullHandlerString);
 
-  const [moduleRoot, moduleAndHandler] = _moduleRootAndHandler(
-    fullHandlerString
-  );
+  const [moduleRoot, moduleAndHandler] =
+    _moduleRootAndHandler(fullHandlerString);
   const [module, handlerPath] = _splitHandlerString(moduleAndHandler);
 
   const userApp = _loadUserApp(appRoot, moduleRoot, module);

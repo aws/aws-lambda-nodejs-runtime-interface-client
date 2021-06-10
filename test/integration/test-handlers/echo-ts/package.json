@@ -1,0 +1,17 @@
+{
+  "name": "echo-ts-handler",
+  "version": "1.0.0",
+  "description": "Sample Lambda echo handler with TypeScript for NodeJS",
+  "main": "app.js",
+  "author": "AWS Lambda",
+  "license": "Apache-2.0",
+  "scripts": {
+    "start": "node -r ts-node/register $(npm bin)/aws-lambda-ric index.handler"
+  },
+  "dependencies": {
+    "@types/node": "15.12.2",
+    "aws-lambda-ric": "file:deps/aws-lambda-ric",
+    "ts-node": "10.0.0",
+    "typescript": "4.3.2"
+  }
+}
