@@ -19,6 +19,7 @@ RUN apt-get update && \
 
 # Stage 2 - build function and dependencies
 FROM node-ubuntu AS build-image
+ARG ARCHITECTURE
 # Install aws-lambda-cpp build dependencies
 RUN apt-get update && \
     apt-get install -y \
@@ -32,16 +33,11 @@ RUN apt-get update && \
         autoconf \
         automake \
         libtool \
+        wget \
         libcurl4-openssl-dev
-# Install CMake > 3.9 for Ubuntu 16.04
-RUN if [ "$(printf '%s\n' "3.9.0" "$(cmake --version | head -n1 | tr -dc '0-9.')" | sort -V | head -n1)" != "3.9.0" ]; then \
-        curl -o cmake3.tar.gz https://cmake.org/files/v3.10/cmake-3.10.0.tar.gz && \
-        tar -xzf cmake3.tar.gz && \
-        cd cmake-3.10.0 && \
-        ./bootstrap && \
-        make && \
-        make install \
-    ; fi
+# Install a modern CMake
+RUN wget --quiet -O cmake-install https://github.com/Kitware/CMake/releases/download/v3.20.0/cmake-3.20.0-linux-${ARCHITECTURE}.sh && \
+    sh cmake-install --skip-license --prefix=/usr --exclude-subdirectory;
 
 # Include global arg in this stage of the build
 ARG FUNCTION_DIR

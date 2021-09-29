@@ -2,8 +2,8 @@ version: 0.2
 
 env:
   variables:
-    OS_DISTRIBUTION: alpine
-    NPX_BINARY_LOCATION: "/usr/local/bin/npx"
+    OS_DISTRIBUTION: amazonlinux
+    NPX_BINARY_LOCATION: "/usr/bin/npx"
 batch:
   build-matrix:
     static:
@@ -14,10 +14,11 @@ batch:
       env:
         variables:
           DISTRO_VERSION:
-            - "3.9"
+            - "1"
           RUNTIME_VERSION:
             - "10"
             - "12"
+            - "14"
 phases:
   pre_build:
     commands:
@@ -40,9 +41,6 @@ phases:
         cp "test/integration/docker/Dockerfile.echo.${OS_DISTRIBUTION}" \
           "${SCRATCH_DIR}/Dockerfile.echo.${OS_DISTRIBUTION}.tmp"
       - >
-        echo "RUN apk add curl" >> \
-          "${SCRATCH_DIR}/Dockerfile.echo.${OS_DISTRIBUTION}.tmp"
-      - >
         echo "COPY ${SCRATCH_DIR}/${RIE} /usr/bin/${RIE}" >> \
           "${SCRATCH_DIR}/Dockerfile.echo.${OS_DISTRIBUTION}.tmp"
       - >
@@ -59,7 +57,8 @@ phases:
           -f "${SCRATCH_DIR}/Dockerfile.echo.${OS_DISTRIBUTION}.tmp" \
           -t "${IMAGE_TAG}" \
           --build-arg RUNTIME_VERSION="${RUNTIME_VERSION}" \
-          --build-arg DISTRO_VERSION="${DISTRO_VERSION}"
+          --build-arg DISTRO_VERSION="${DISTRO_VERSION}" \
+          --build-arg ARCHITECTURE="${ARCHITECTURE}"
   build:
     commands:
       - set -x

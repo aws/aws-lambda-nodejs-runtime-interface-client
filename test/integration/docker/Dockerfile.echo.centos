@@ -15,23 +15,21 @@ RUN curl -sL https://rpm.nodesource.com/setup_${RUNTIME_VERSION}.x | bash - && \
 
 # Stage 2 - build function and dependencies
 FROM node-centos AS build-image
+ARG ARCHITECTURE
 # Install aws-lambda-cpp build dependencies
 RUN yum install -y \
         tar \
         gzip \
         make \
+        wget \
         autoconf \
         automake \
         libtool \
         libcurl-devel \
         gcc-c++
-# Install CMake > 3.9
-RUN curl -o cmake3.tar.gz https://cmake.org/files/v3.10/cmake-3.10.0.tar.gz && \
-    tar -xzf cmake3.tar.gz && \
-    cd cmake-3.10.0 && \
-    ./bootstrap && \
-    make && \
-    make install
+# Install a modern CMake
+RUN wget --quiet -O cmake-install https://github.com/Kitware/CMake/releases/download/v3.20.0/cmake-3.20.0-linux-${ARCHITECTURE}.sh && \
+    sh cmake-install --skip-license --prefix=/usr --exclude-subdirectory;
 
 # Include global arg in this stage of the build
 ARG FUNCTION_DIR

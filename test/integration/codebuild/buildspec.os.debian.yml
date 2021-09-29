@@ -9,7 +9,6 @@ batch:
     static:
       ignore-failure: false
       env:
-        type: LINUX_CONTAINER
         privileged-mode: true
     dynamic:
       env:
@@ -27,12 +26,22 @@ phases:
       - echo "Extracting and including the Runtime Interface Emulator"
       - SCRATCH_DIR=".scratch"
       - mkdir "${SCRATCH_DIR}"
-      - tar -xvf test/integration/resources/aws-lambda-rie.tar.gz --directory "${SCRATCH_DIR}"
+      - ARCHITECTURE=$(arch)
+      - >
+        if [[ "$ARCHITECTURE" == "x86_64" ]]; then
+            RIE="aws-lambda-rie"
+        elif [[ "$ARCHITECTURE" == "aarch64" ]]; then
+            RIE="aws-lambda-rie-arm64"
+        else
+            echo "Architecture $ARCHITECTURE is not currently supported."
+            exit 1
+        fi
+      - tar -xvf test/integration/resources/${RIE}.tar.gz --directory "${SCRATCH_DIR}"
       - >
         cp "test/integration/docker/Dockerfile.echo.${OS_DISTRIBUTION}" \
           "${SCRATCH_DIR}/Dockerfile.echo.${OS_DISTRIBUTION}.tmp"
       - >
-        echo "COPY ${SCRATCH_DIR}/aws-lambda-rie /usr/bin/aws-lambda-rie" >> \
+        echo "COPY ${SCRATCH_DIR}/${RIE} /usr/bin/${RIE}" >> \
           "${SCRATCH_DIR}/Dockerfile.echo.${OS_DISTRIBUTION}.tmp"
       - >
         if [[ -z "${DOCKERHUB_USERNAME}" && -z "${DOCKERHUB_PASSWORD}" ]];
@@ -60,12 +69,11 @@ phases:
       - >
         docker run \
           --detach \
-          -e "NPX_BINARY_LOCATION=${NPX_BINARY_LOCATION}" \
           --name "${OS_DISTRIBUTION}-app" \
           --network "${OS_DISTRIBUTION}-network" \
           --entrypoint="" \
           "${IMAGE_TAG}" \
-          sh -c '/usr/bin/aws-lambda-rie ${NPX_BINARY_LOCATION} aws-lambda-ric index.handler'
+          sh -c "/usr/bin/${RIE} ${NPX_BINARY_LOCATION} aws-lambda-ric index.handler"
       - sleep 2
       - >
         docker run \
@@ -81,19 +89,20 @@ phases:
         echo "Response: ${actual}"
         if [[ "$actual" != "$expected" ]]; then
           echo "fail! runtime: $RUNTIME - expected output $expected - got $actual"
+          exit -1
+        fi
+    finally:
+      - |
           echo "---------Container Logs: ${OS_DISTRIBUTION}-app----------"
           echo
-          docker logs "${OS_DISTRIBUTION}-app"
+          docker logs "${OS_DISTRIBUTION}-app" || true
           echo
           echo "---------------------------------------------------"
           echo "--------Container Logs: ${OS_DISTRIBUTION}-tester--------"
           echo
-          docker logs "${OS_DISTRIBUTION}-tester"
+          docker logs "${OS_DISTRIBUTION}-tester" || true
           echo
           echo "---------------------------------------------------"
-          exit -1
-        fi
-    finally:
       - echo "Cleaning up..."
       - docker stop "${OS_DISTRIBUTION}-app" || true
       - docker rm --force "${OS_DISTRIBUTION}-app" || true
