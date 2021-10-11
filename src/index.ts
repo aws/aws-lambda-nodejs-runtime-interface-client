@@ -8,7 +8,7 @@
 
 "use strict";
 
-import { HandlerFunction } from "./Common";
+import { HandlerFunction, isHandlerFunction } from "./Common";
 import * as Errors from "./Errors";
 import RuntimeClient from "./RuntimeClient";
 import Runtime from "./Runtime";
@@ -18,7 +18,13 @@ import * as UserFunction from "./utils/UserFunction";
 
 LogPatch.patchConsole();
 
-export function run(appRoot: string, handler: string): void {
+export function run(appRoot: string, handler: string): void;
+export function run(handler: HandlerFunction): void;
+
+export function run(
+  appRootOrHandler: string | HandlerFunction,
+  handler: string = ""
+): void {
   if (!process.env.AWS_LAMBDA_RUNTIME_API) {
     throw new Error("Missing Runtime API Server configuration.");
   }
@@ -50,7 +56,9 @@ export function run(appRoot: string, handler: string): void {
   BeforeExitListener.reset();
   process.on("beforeExit", BeforeExitListener.invoke);
 
-  const handlerFunc = UserFunction.load(appRoot, handler) as HandlerFunction;
+  const handlerFunc = isHandlerFunction(appRootOrHandler)
+    ? appRootOrHandler
+    : (UserFunction.load(appRootOrHandler, handler) as HandlerFunction);
   const runtime = new Runtime(client, handlerFunc, errorCallbacks);
 
   runtime.scheduleIteration();

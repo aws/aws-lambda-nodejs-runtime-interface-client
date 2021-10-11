@@ -1,0 +1,52 @@
+# Define global args
+ARG FUNCTION_DIR="/home/app/"
+ARG RUNTIME_VERSION
+ARG DISTRO_VERSION
+
+# Stage 1 - build function and dependencies
+FROM node:${RUNTIME_VERSION}-alpine${DISTRO_VERSION} AS build-image
+# Install aws-lambda-cpp build dependencies
+RUN apk add --update-cache \
+        build-base \
+        libtool \
+        musl-dev \
+        libressl-dev \
+        libffi-dev \
+        autoconf \
+        automake \
+        libexecinfo-dev \
+        make \
+        cmake \
+        python3 \
+        libcurl
+
+# Include global arg in this stage of the build
+ARG FUNCTION_DIR
+# Create function directory
+RUN mkdir -p ${FUNCTION_DIR}
+
+# Copy & build Runtime Interface Client package (as we're installing it from a local filesystem source)
+WORKDIR ${FUNCTION_DIR}/deps/aws-lambda-ric
+COPY . .
+RUN make build && \
+    npm run test:unit
+
+# Copy function code
+COPY test/integration/test-handlers/programmatic/* ${FUNCTION_DIR}
+# Install the function's dependencies
+WORKDIR ${FUNCTION_DIR}
+RUN npm install
+
+
+# Stage 2 - final runtime image
+# Grab a fresh copy of the Node image
+FROM node:${RUNTIME_VERSION}-alpine${DISTRO_VERSION}
+
+# Include global arg in this stage of the build
+ARG FUNCTION_DIR
+# Set working directory to function root directory
+WORKDIR ${FUNCTION_DIR}
+# Copy in the built dependencies
+COPY --from=build-image ${FUNCTION_DIR} ${FUNCTION_DIR}
+
+CMD [ "/usr/local/bin/node", "index.js" ]
