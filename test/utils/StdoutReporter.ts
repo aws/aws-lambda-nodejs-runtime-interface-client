@@ -19,16 +19,16 @@ const {
  * patch.
  */
 module.exports = class StdoutReporter extends reporters.Base {
-  private _alreadyWritten: boolean;
-  private _report: string;
-  private _indents: number;
+  #alreadyWritten: boolean;
+  #report: string;
+  #indents: number;
 
-  public constructor(runner: Runner, options: MochaOptions) {
+  constructor(runner: Runner, options: MochaOptions) {
     super(runner, options);
 
-    this._alreadyWritten = false;
-    this._report = "";
-    this._indents = 0;
+    this.#alreadyWritten = false;
+    this.#report = "";
+    this.#indents = 0;
     const stats = runner.stats;
 
     runner
@@ -66,25 +66,25 @@ module.exports = class StdoutReporter extends reporters.Base {
   }
 
   indent() {
-    return Array(this._indents).join("  ");
+    return Array(this.#indents).join("  ");
   }
 
   increaseIndent() {
-    this._indents++;
+    this.#indents++;
   }
 
   decreaseIndent() {
-    this._indents--;
+    this.#indents--;
   }
 
   log(line) {
-    this._report += `${this.indent()}${line}\n`;
+    this.#report += `${this.indent()}${line}\n`;
   }
 
   dumpReport() {
-    if (!this._alreadyWritten) {
-      process.stdout.write(this._report);
-      this._alreadyWritten = true;
+    if (!this.#alreadyWritten) {
+      process.stdout.write(this.#report);
+      this.#alreadyWritten = true;
     }
   }
 };
