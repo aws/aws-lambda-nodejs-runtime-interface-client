@@ -25,7 +25,6 @@ wget -c https://github.com/awslabs/aws-lambda-cpp/archive/v$AWS_LAMBDA_CPP_RELEA
     patch -p1 < ../patches/aws-lambda-cpp-add-content-type.patch
 )
 
-
 # Pack again and remove the folder
 tar -czvf aws-lambda-cpp-$AWS_LAMBDA_CPP_RELEASE.tar.gz aws-lambda-cpp-$AWS_LAMBDA_CPP_RELEASE --no-same-owner && \
   rm -rf aws-lambda-cpp-$AWS_LAMBDA_CPP_RELEASE
