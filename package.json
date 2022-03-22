@@ -1,5 +1,5 @@
 {
-  "name": "@javascriptbach/aws-lambda-ric",
+  "name": "aws-lambda-ric",
   "version": "2.0.0",
   "description": "AWS Lambda Runtime Interface Client for NodeJs",
   "homepage": "https://github.com/aws/aws-lambda-nodejs-runtime-interface-client",
@@ -71,17 +71,5 @@
     "should": "13.2.3",
     "ts-mocha": "8.0.0",
     "typescript": "4.3.2"
-  },
-  "types": "./lib/index.d.ts",
-  "directories": {
-    "lib": "lib",
-    "test": "test"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/JavaScriptBach/aws-lambda-nodejs-runtime-interface-client.git"
-  },
-  "bugs": {
-    "url": "https://github.com/JavaScriptBach/aws-lambda-nodejs-runtime-interface-client/issues"
   }
 }
