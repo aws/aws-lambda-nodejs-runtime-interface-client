@@ -121,10 +121,8 @@ mkdir -p ~/.aws-lambda-rie && \
 2) Run your Lambda image function using the docker run command. 
 
 ```shell script
-docker run -d -v ~/.aws-lambda-rie:/aws-lambda -p 9000:8080 \
-    --entrypoint /aws-lambda/aws-lambda-rie \
-    myfunction:latest \
-        /usr/local/bin/npx aws-lambda-ric app.handler
+docker run -d -v ~/.aws-lambda-rie:/aws-lambda -p 9000:8080 myfunction:latest \
+    --entrypoint /aws-lambda/aws-lambda-rie /usr/local/bin/npx aws-lambda-ric app.handler
 ```
 
 This runs the image as a container and starts up an endpoint locally at `http://localhost:9000/2015-03-31/functions/function/invocations`. 
