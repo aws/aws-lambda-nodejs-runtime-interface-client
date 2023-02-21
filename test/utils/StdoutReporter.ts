@@ -6,10 +6,10 @@ import { MochaOptions, Runner, reporters } from "mocha";
 
 const {
   EVENT_SUITE_BEGIN,
+  EVENT_TEST_PASS,
   EVENT_SUITE_END,
   EVENT_RUN_BEGIN,
   EVENT_RUN_END,
-  EVENT_TEST_PASS,
   EVENT_TEST_FAIL,
 } = Runner.constants;
 
