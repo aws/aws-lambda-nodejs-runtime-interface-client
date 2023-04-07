@@ -58,13 +58,18 @@ function _resolveHandler(object: any, nestedProperty: string): any {
 }
 
 /**
- * Verify that the provided path can be loaded as a file per:
+ * Try to get path to a file path if it can loaded as a file per:
  * https://nodejs.org/dist/latest-v10.x/docs/api/modules.html#modules_all_together
  * @param string - the fully resolved file path to the module
- * @return bool
+ * @return string
  */
-function _canLoadAsFile(modulePath: string): boolean {
-  return fs.existsSync(modulePath) || fs.existsSync(modulePath + ".js");
+function _getLoadAsFilePath(modulePath: string): string {
+  const paths = [modulePath + ".cjs", modulePath + ".js", modulePath];
+  for (const path of paths) {
+    if (fs.existsSync(path)) {
+      return path;
+    }
+  }
 }
 
 /**
@@ -74,8 +79,9 @@ function _canLoadAsFile(modulePath: string): boolean {
  */
 function _tryRequire(appRoot: string, moduleRoot: string, module: string): any {
   const lambdaStylePath = path.resolve(appRoot, moduleRoot, module);
-  if (_canLoadAsFile(lambdaStylePath)) {
-    return require(lambdaStylePath);
+  const filePath = _getLoadAsFilePath(lambdaStylePath);
+  if (filePath) {
+    return require(filePath);
   } else {
     // Why not just require(module)?
     // Because require() is relative to __dirname, not process.cwd()
