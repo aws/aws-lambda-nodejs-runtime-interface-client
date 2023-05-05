@@ -2,7 +2,7 @@ version: 0.2
 
 env:
   variables:
-    OS_DISTRIBUTION: centos
+    OS_DISTRIBUTION: ubuntu
     NPX_BINARY_LOCATION: "/usr/bin/npx"
 batch:
   build-matrix:
@@ -14,12 +14,12 @@ batch:
       env:
         variables:
           DISTRO_VERSION:
-            - "7"
-            - "8"
+            - "18.04"
+            - "20.04"
+            - "22.04"
           RUNTIME_VERSION:
-            - "10"
-            - "12"
             - "14"
+            - "16"
 phases:
   pre_build:
     commands:

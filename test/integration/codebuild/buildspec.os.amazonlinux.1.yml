@@ -16,8 +16,6 @@ batch:
           DISTRO_VERSION:
             - "1"
           RUNTIME_VERSION:
-            - "10"
-            - "12"
             - "14"
 phases:
   pre_build:

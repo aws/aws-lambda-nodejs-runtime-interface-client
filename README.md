@@ -10,9 +10,9 @@ You can include this package in your preferred base image to make that base imag
 
 ## Requirements
 The NodeJS Runtime Interface Client package currently supports NodeJS versions:
- - 10.x
- - 12.x
  - 14.x
+ - 16.x
+ - 18.x
 
 ## Usage
 
@@ -55,7 +55,7 @@ Example Dockerfile (to keep the image light we used a multi-stage build):
 # Define custom function directory
 ARG FUNCTION_DIR="/function"
 
-FROM node:12-buster as build-image
+FROM node:18-buster as build-image
 
 # Include global arg in this stage of the build
 ARG FUNCTION_DIR
@@ -81,7 +81,7 @@ WORKDIR ${FUNCTION_DIR}
 RUN npm install
 
 # Grab a fresh slim copy of the image to reduce the final size
-FROM node:12-buster-slim
+FROM node:18-buster-slim
 
 # Include global arg in this stage of the build
 ARG FUNCTION_DIR

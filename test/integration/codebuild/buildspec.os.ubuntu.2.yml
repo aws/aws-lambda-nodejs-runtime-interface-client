@@ -14,13 +14,10 @@ batch:
       env:
         variables:
           DISTRO_VERSION:
-            - "16.04"
-            - "18.04"
             - "20.04"
+            - "22.04"
           RUNTIME_VERSION:
-            - "10"
-            - "12"
-            - "14"
+            - "18"
 phases:
   pre_build:
     commands:

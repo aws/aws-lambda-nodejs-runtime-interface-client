@@ -85,7 +85,7 @@ export default class Runtime {
           .then(callbackContext.succeed, callbackContext.fail)
           .catch(callbackContext.fail);
       }
-    } catch (err) {
+    } catch (err: any) {
       callback(err);
     }
   }

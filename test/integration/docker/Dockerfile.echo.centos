@@ -5,7 +5,7 @@ ARG DISTRO_VERSION
 
 # Stage 1 - bundle base image + runtime
 # Grab a fresh copy of the image and install Node
-FROM centos:${DISTRO_VERSION} AS node-centos
+FROM quay.io/centos/centos:${DISTRO_VERSION} AS node-centos
 # Include global arg in this stage of the build
 ARG RUNTIME_VERSION
 # Install NodeJS
