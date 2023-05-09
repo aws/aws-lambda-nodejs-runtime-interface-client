@@ -83,6 +83,10 @@ RUN npm install
 # Grab a fresh slim copy of the image to reduce the final size
 FROM node:18-buster-slim
 
+# Required for Node runtimes which use npm@8.6.0+ because
+# by default npm writes logs under /home/.npm and Lambda fs is read-only
+ENV NPM_CONFIG_CACHE=/tmp/.npm
+
 # Include global arg in this stage of the build
 ARG FUNCTION_DIR
 
