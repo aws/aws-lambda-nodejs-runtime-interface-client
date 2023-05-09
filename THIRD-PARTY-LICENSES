@@ -1,4 +1,4 @@
-** aws-lambda-cpp; version 0.2.6 -- https://github.com/awslabs/aws-lambda-cpp
+** aws-lambda-cpp; version 0.2.8 -- https://github.com/awslabs/aws-lambda-cpp
 
 Apache License
 
@@ -204,7 +204,7 @@ limitations under the License.
 
 ------
 
-** node-gyp; version 7.1.0 -- https://github.com/nodejs/node-gyp
+** node-gyp; version 9.3.1 -- https://github.com/nodejs/node-gyp
 Copyright (c) 2012 Nathan Rajlich <nathan@tootallnate.net>
 
 (The MIT License)
@@ -234,7 +234,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 ------
 
-** node-addon-api; version 3.0.1 -- https://github.com/nodejs/node-addon-api
+** node-addon-api; version 6.0.0 -- https://github.com/nodejs/node-addon-api
 The MIT License (MIT)
 Copyright (c) 2017 Node.js API collaborators
 Node.js API collaborators listed at

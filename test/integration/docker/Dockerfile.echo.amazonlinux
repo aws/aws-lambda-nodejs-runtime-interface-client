@@ -8,6 +8,9 @@ ARG DISTRO_VERSION
 FROM amazonlinux:${DISTRO_VERSION} AS node-amazonlinux
 # Include global arg in this stage of the build
 ARG RUNTIME_VERSION
+ARG DISTRO_VERSION
+# Install Py3 required to build Node16+
+RUN if [[ "${DISTRO_VERSION}" == "2" ]] ; then amazon-linux-extras install python3 ; fi
 # Install NodeJS
 RUN curl -sL https://rpm.nodesource.com/setup_${RUNTIME_VERSION}.x | bash - && \
     yum install -y nodejs
@@ -53,6 +56,9 @@ RUN npm install
 # Grab a fresh copy of the Node image
 FROM node-amazonlinux
 
+# Required for Node runtimes which use npm@8.6.0+ because
+# by default npm writes logs under /home/.npm and Lambda fs is read-only
+ENV NPM_CONFIG_CACHE=/tmp/.npm
 # Include global arg in this stage of the build
 ARG FUNCTION_DIR
 # Set working directory to function root directory

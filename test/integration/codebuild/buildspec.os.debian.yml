@@ -15,10 +15,11 @@ batch:
         variables:
           DISTRO_VERSION:
             - "buster"
+            - "bullseye"
           RUNTIME_VERSION:
-            - "10"
-            - "12"
             - "14"
+            - "16"
+            - "18"
 phases:
   pre_build:
     commands:

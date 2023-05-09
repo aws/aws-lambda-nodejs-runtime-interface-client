@@ -99,7 +99,7 @@ function _loadUserApp(
 ): any {
   try {
     return _tryRequire(appRoot, moduleRoot, module);
-  } catch (e) {
+  } catch (e: any) {
     if (e instanceof SyntaxError) {
       throw new UserCodeSyntaxError(<any>e);
     } else if (e.code !== undefined && e.code === "MODULE_NOT_FOUND") {

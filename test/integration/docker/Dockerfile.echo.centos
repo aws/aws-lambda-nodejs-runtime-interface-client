@@ -5,7 +5,7 @@ ARG DISTRO_VERSION
 
 # Stage 1 - bundle base image + runtime
 # Grab a fresh copy of the image and install Node
-FROM centos:${DISTRO_VERSION} AS node-centos
+FROM quay.io/centos/centos:${DISTRO_VERSION} AS node-centos
 # Include global arg in this stage of the build
 ARG RUNTIME_VERSION
 # Install NodeJS
@@ -53,6 +53,9 @@ RUN npm install
 # Grab a fresh copy of the Node image
 FROM node-centos
 
+# Required for Node runtimes which use npm@8.6.0+ because
+# by default npm writes logs under /home/.npm and Lambda fs is read-only
+ENV NPM_CONFIG_CACHE=/tmp/.npm
 # Include global arg in this stage of the build
 ARG FUNCTION_DIR
 # Set working directory to function root directory
