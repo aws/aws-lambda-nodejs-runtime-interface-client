@@ -9,7 +9,7 @@ FROM amazonlinux:${DISTRO_VERSION} AS node-amazonlinux
 # Include global arg in this stage of the build
 ARG RUNTIME_VERSION
 ARG DISTRO_VERSION
-# Install Py3 required by Node16+
+# Install Py3 required to build Node16+
 RUN if [[ "${DISTRO_VERSION}" == "2" ]] ; then amazon-linux-extras install python3 ; fi
 # Install NodeJS
 RUN curl -sL https://rpm.nodesource.com/setup_${RUNTIME_VERSION}.x | bash - && \
