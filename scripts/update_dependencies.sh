@@ -10,7 +10,17 @@ source versions
 rm -f aws-lambda-cpp-*.tar.gz && rm -f curl-*.tar.gz
 
 # Grab Curl
-wget -c https://github.com/curl/curl/archive/refs/tags/curl-$CURL_VERSION.tar.gz
+wget -c https://github.com/curl/curl/archive/refs/tags/curl-$CURL_VERSION.tar.gz -O - | tar -xz
+
+# Apply patches
+(
+  cd curl-curl-$CURL_VERSION && \
+    patch -p1 < ../patches/0001-curl-disable_wakeup.patch
+)
+
+# Pack again and remove the folder
+tar -czvf curl-$CURL_VERSION.tar.gz curl-curl-$CURL_VERSION && \
+  rm -rf curl-curl-$CURL_VERSION
 
 # Grab aws-lambda-cpp
 wget -c https://github.com/awslabs/aws-lambda-cpp/archive/refs/tags/v$AWS_LAMBDA_CPP_RELEASE.tar.gz -O - | tar -xz
