@@ -71,8 +71,8 @@ export default class Runtime {
     );
 
     try {
-      this._setErrorCallbacks(invokeContext.invokeId);
-      this._setDefaultExitListener(invokeContext.invokeId);
+      this.#setErrorCallbacks(invokeContext.invokeId);
+      this.#setDefaultExitListener(invokeContext.invokeId);
 
       const result = this.handler(
         JSON.parse(bodyJson),
@@ -94,7 +94,7 @@ export default class Runtime {
    * Replace the error handler callbacks.
    * @param {String} invokeId
    */
-  private _setErrorCallbacks(invokeId: string): void {
+  #setErrorCallbacks(invokeId: string): void {
     this.errorCallbacks.uncaughtException = (error: Error): void => {
       this.client.postInvocationError(error, invokeId, () => {
         process.exit(129);
@@ -112,7 +112,7 @@ export default class Runtime {
    * called and the handler is not async.
    * CallbackContext replaces the listener if a callback is invoked.
    */
-  private _setDefaultExitListener(invokeId: string): void {
+  #setDefaultExitListener(invokeId: string): void {
     BeforeExitListener.set(() => {
       this.client.postInvocationResponse(null, invokeId, () =>
         this.scheduleIteration()

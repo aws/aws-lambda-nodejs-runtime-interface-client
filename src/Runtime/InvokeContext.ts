@@ -27,7 +27,7 @@ export default class InvokeContext {
     this.headers = _enforceLowercaseKeys(headers);
   }
 
-  private getHeaderValue(key: string): string | undefined {
+  #getHeaderValue(key: string): string | undefined {
     const headerVal = this.headers[key];
 
     switch (typeof headerVal) {
@@ -48,7 +48,7 @@ export default class InvokeContext {
    * The invokeId for this request.
    */
   get invokeId(): string {
-    const id = this.getHeaderValue(INVOKE_HEADER.AWSRequestId);
+    const id = this.#getHeaderValue(INVOKE_HEADER.AWSRequestId);
     assert.ok(id, "invocation id is missing or invalid");
     return id;
   }
@@ -57,7 +57,7 @@ export default class InvokeContext {
    * The header data for this request.
    */
   get headerData(): IHeaderData {
-    return this._headerData();
+    return this.#headerData();
   }
 
   /**
@@ -80,11 +80,11 @@ export default class InvokeContext {
   attachEnvironmentData(
     callbackContext: ICallbackContext
   ): ICallbackContext & IEnvironmentData & IHeaderData {
-    this._forwardXRay();
+    this.#forwardXRay();
     return Object.assign(
       callbackContext,
-      this._environmentalData(),
-      this._headerData()
+      this.#environmentalData(),
+      this.#headerData()
     );
   }
 
@@ -92,7 +92,7 @@ export default class InvokeContext {
    * All parts of the user-facing context object which are provided through
    * environment variables.
    */
-  private _environmentalData(): IEnvironmentData {
+  #environmentalData(): IEnvironmentData {
     return {
       functionVersion: process.env["AWS_LAMBDA_FUNCTION_VERSION"],
       functionName: process.env["AWS_LAMBDA_FUNCTION_NAME"],
@@ -106,21 +106,21 @@ export default class InvokeContext {
    * All parts of the user-facing context object which are provided through
    * request headers.
    */
-  private _headerData(): IHeaderData {
+  #headerData(): IHeaderData {
     const deadline = parseInt(
-      this.getHeaderValue(INVOKE_HEADER.DeadlineMs) || ""
+      this.#getHeaderValue(INVOKE_HEADER.DeadlineMs) || ""
     );
     return {
       clientContext: _parseJson(
-        this.getHeaderValue(INVOKE_HEADER.ClientContext),
+        this.#getHeaderValue(INVOKE_HEADER.ClientContext),
         "ClientContext"
       ),
       identity: _parseJson(
-        this.getHeaderValue(INVOKE_HEADER.CognitoIdentity),
+        this.#getHeaderValue(INVOKE_HEADER.CognitoIdentity),
         "CognitoIdentity"
       ),
-      invokedFunctionArn: this.getHeaderValue(INVOKE_HEADER.ARN),
-      awsRequestId: this.getHeaderValue(INVOKE_HEADER.AWSRequestId),
+      invokedFunctionArn: this.#getHeaderValue(INVOKE_HEADER.ARN),
+      awsRequestId: this.#getHeaderValue(INVOKE_HEADER.AWSRequestId),
       getRemainingTimeInMillis: function () {
         return deadline - Date.now();
       },
@@ -130,9 +130,9 @@ export default class InvokeContext {
   /**
    * Forward the XRay header into the environment variable.
    */
-  private _forwardXRay(): void {
-    if (this.getHeaderValue(INVOKE_HEADER.XRayTrace)) {
-      process.env["_X_AMZN_TRACE_ID"] = this.getHeaderValue(
+  #forwardXRay(): void {
+    if (this.#getHeaderValue(INVOKE_HEADER.XRayTrace)) {
+      process.env["_X_AMZN_TRACE_ID"] = this.#getHeaderValue(
         INVOKE_HEADER.XRayTrace
       );
     } else {
