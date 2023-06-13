@@ -46,17 +46,18 @@ build/Release
 node_modules/
 jspm_packages/
 
+# Required for the async_init_with_node_modules unit test
+!test/handlers/async_init_with_node_modules/node_modules
+
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
-
-# TypeScript cache
-*.tsbuildinfo
 
 # Optional npm cache directory
 .npm
 
 # Optional eslint cache
 .eslintcache
+.eslintignore
 
 # Microbundle cache
 .rpt2_cache/
@@ -88,6 +89,7 @@ out
 # Nuxt.js build / generate output
 .nuxt
 lib/
+dist/
 
 # Gatsby files
 .cache/

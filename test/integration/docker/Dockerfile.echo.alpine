@@ -1,5 +1,5 @@
 # Define global args
-ARG FUNCTION_DIR="/home/app/"
+ARG FUNCTION_DIR="/home/app"
 ARG RUNTIME_VERSION
 ARG DISTRO_VERSION
 
@@ -28,6 +28,12 @@ RUN mkdir -p ${FUNCTION_DIR}
 # Copy & build Runtime Interface Client package (as we're installing it from a local filesystem source)
 WORKDIR ${FUNCTION_DIR}/deps/aws-lambda-ric
 COPY . .
+
+# Node14 uses npm@6.14.18 by default which will downgrade permissions, if it's root,
+# before running any build scripts: https://github.com/npm/npm/issues/3497 
+# Starting from npm@7.0.0, when npm is run as root, 
+# scripts are always run with the effective uid and gid of the working directory owner.
+RUN if [[ $(node -v | cut -c 1-3) == "v14" ]] ; then npm install -g npm@7 ; fi
 RUN make build && \
     npm run test:unit
 

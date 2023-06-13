@@ -1,9 +1,9 @@
 {
     'targets': [
         {
-            'target_name': 'runtime-client',
+            'target_name': 'rapid-client',
             'sources': [
-                'lib/RuntimeClient/runtime-client.cc',
+                'src/rapid-client.cc',
             ],
             'dependencies': [
                 "<!(node -p \"require('node-addon-api').gyp\")",

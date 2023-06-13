@@ -1,0 +1,1 @@
+package.json exists and does not contain `type: "module"`.

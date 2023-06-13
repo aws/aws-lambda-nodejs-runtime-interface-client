@@ -1,38 +1,31 @@
 {
-  "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "project": ["src/tsconfig.json", "test/unit/tsconfig.json"]
+    "ecmaVersion": 2022
   },
-  "plugins": ["@typescript-eslint", "prettier"],
   "extends": [
-    "eslint:recommended",
-    "plugin:@typescript-eslint/eslint-recommended",
-    "plugin:@typescript-eslint/recommended",
-    "prettier"
+    "plugin:prettier/recommended"
   ],
   "env": {
     "node": true,
+    "mocha": true,
     "es6": true
   },
   "rules": {
-    "@typescript-eslint/restrict-plus-operands": "error",
-    "@typescript-eslint/interface-name-prefix": "off",
-    "no-async-promise-executor": "warn",
-    "@typescript-eslint/explicit-function-return-type": "off",
-    "@typescript-eslint/indent": "off",
-    "@typescript-eslint/ban-types": "warn",
-    "no-console": "warn",
-    "no-shadow": "warn"
-  },
-  "overrides": [
-    {
-      "files":["test/**/*.ts"],
-      "rules": {
-        "no-console": "off",
-        "@typescript-eslint/no-explicit-any": "off",
-        "no-prototype-builtins": "off",
-        "strictBindCallApply": "off"
+    "strict": [
+      "error",
+      "global"
+    ],
+    "indent": [
+      "error",
+      2
+    ],
+    "camelcase": "error",
+    "no-console": "off",
+    "no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_"
       }
-    }
-  ]
+    ]
+  }
 }

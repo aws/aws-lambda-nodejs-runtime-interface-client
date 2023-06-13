@@ -1,7 +1,9 @@
 build
 .DS_Store
 
-src
+src/*
+# Rapid-client.c to be used with node-gyp
+!src/rapid-client.cc
 test
 
 # Logs
@@ -63,6 +65,7 @@ web_modules/
 # Optional eslint config & cache
 .eslintrc
 .eslintcache
+.eslintignore
 
 # Microbundle cache
 .rpt2_cache/
