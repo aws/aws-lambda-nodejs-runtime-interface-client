@@ -263,11 +263,7 @@ function _highWaterMark(handler) {
   }
 
   const hwm = parseInt(handler[HANDLER_HIGHWATERMARK]);
-  if (isNaN(hwm)) {
-    return undefined;
-  }
-
-  return hwm;
+  return isNaN(hwm) ? undefined : hwm;
 }
 
 /**

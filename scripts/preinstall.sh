@@ -29,10 +29,60 @@ else
             ./buildconf && \
             ./configure \
                 --prefix "$ARTIFACTS_DIR" \
+                --disable-alt-svc \
+                --disable-ares \
+                --disable-cookies \
+                --disable-crypto-auth \
+                --disable-dateparse \
+                --disable-dict \
+                --disable-dnsshuffle \
+                --disable-doh \
+                --disable-file \
+                --disable-ftp \
+                --disable-get-easy-options \
+                --disable-gopher \
+                --disable-hsts \
+                --disable-http-auth \
+                --disable-imap \
+                --disable-ipv6 \
+                --disable-ldap \
+                --disable-ldaps \
+                --disable-libcurl-option \
+                --disable-manual \
+                --disable-mime \
+                --disable-mqtt \
+                --disable-netrc \
+                --disable-ntlm-wb \
+                --disable-pop3 \
+                --disable-progress-meter \
+                --disable-proxy \
+                --disable-pthreads \
+                --disable-rtsp \
                 --disable-shared \
-                --without-ssl \
+                --disable-smtp \
+                --disable-socketpair \
+                --disable-sspi \
+                --disable-telnet \
+                --disable-tftp \
+                --disable-threaded-resolver \
+                --disable-unix-sockets \
+                --disable-verbose \
+                --disable-versioned-symbols \
+                --disable-websockets \
                 --with-pic \
-                --without-zlib && \
+                --without-brotli \
+                --without-ca-bundle \
+                --without-gssapi \
+                --without-libidn2 \
+                --without-libpsl \
+                --without-librtmp \
+                --without-libssh2 \
+                --without-nghttp2 \
+                --without-nghttp3 \
+                --without-ngtcp2 \
+                --without-ssl \
+                --without-zlib \
+                --without-zstd && \
             make && \
             make install
     )

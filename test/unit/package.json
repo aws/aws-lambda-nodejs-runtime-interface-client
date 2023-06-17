@@ -1,8 +1,8 @@
 {
   "name": "_unit",
   "version": "1.0.0",
-  "author": "",
-  "license": "UNLICENSED",
+  "author": "AWS Lambda",
+  "license": "Apache-2.0",
   "eslintConfig": {
     "extends": [
       "plugin:prettier/recommended"

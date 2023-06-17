@@ -12,7 +12,7 @@ const Errors = require('./Errors.js');
 const BeforeExitListener = require('./BeforeExitListener.js');
 const LogPatch = require('./LogPatch');
 
-export async function start(appRootOrHandler, handler = '') {
+export async function run(appRootOrHandler, handler = '') {
   LogPatch.patchConsole();
   const client = new RAPIDClient(process.env.AWS_LAMBDA_RUNTIME_API);
 

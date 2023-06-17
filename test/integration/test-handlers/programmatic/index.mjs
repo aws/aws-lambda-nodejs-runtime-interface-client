@@ -1,10 +1,10 @@
 'use strict';
 
-import { start } from 'aws-lambda-ric';
+import { run } from 'aws-lambda-ric';
 
 const echo = async (event, context) => {
   console.log('hello world');
   return 'success';
 };
 
-await start(echo);
+await run(echo);

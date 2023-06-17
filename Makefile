@@ -1,56 +1,48 @@
-.PHONY: target
 target:
 	$(info ${HELP_MESSAGE})
 	@exit 0
 
-.PHONY: init
 init:
 	npm install
 
-.PHONY: test
 test:
 	npm run test
 
-.PHONY: setup-codebuild-agent
 setup-codebuild-agent:
 	docker build -t codebuild-agent - < test/integration/codebuild-local/Dockerfile.agent
 
-.PHONY: test-smoke
 test-smoke: setup-codebuild-agent
 	CODEBUILD_IMAGE_TAG=codebuild-agent test/integration/codebuild-local/test_one.sh test/integration/codebuild/buildspec.os.alpine.1.yml alpine 3.16 18
 
-.PHONY: test-integ
 test-integ: setup-codebuild-agent
 	CODEBUILD_IMAGE_TAG=codebuild-agent test/integration/codebuild-local/test_all.sh test/integration/codebuild
 
-.PHONY: install
+copy-files:
+	npm run copy-files
+
 install:
 	BUILD=$(BUILD) npm install
 
-.PHONY: format
 format:
 	npm run format
 
 # Command to run everytime you make changes to verify everything works
-.PHONY: dev
 dev: init test
 
 # Verifications to run before sending a pull request
-.PHONY: pr
 pr: build dev test-integ
 
-.PHONY: clean
 clean:
 	npm run clean
 
-.PHONY: build
 build:
 	make install BUILD=1
 	npm run build
 
-.PHONY: pack
 pack: build
 	npm pack
+
+.PHONY: target init test setup-codebuild-agent test-smoke test-integ install format dev pr clean build pack copy-files
 
 define HELP_MESSAGE
 
