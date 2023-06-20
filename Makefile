@@ -35,7 +35,7 @@ pr: build dev test-integ
 clean:
 	npm run clean
 
-build:
+build: copy-files
 	make install BUILD=1
 	npm run build
 
