@@ -4,7 +4,7 @@ export class HttpResponseStream {
 
 declare global {
     namespace awslambda {
-    function streamifyResponse(handler: any, options: any): any;
-    let HttpResponseStream: HttpResponseStream;
+        function streamifyResponse(handler: any, options: any): any;
+        let HttpResponseStream: HttpResponseStream;
     }
 }
