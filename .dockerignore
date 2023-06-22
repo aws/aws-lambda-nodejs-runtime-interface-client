@@ -1,19 +1,20 @@
 node_modules
 **/node_modules
 
+# Required for the async_init_with_node_modules unit test
+!test/handlers/async_init_with_node_modules/node_modules
+
 build
 **/build
 
-lib
-**/lib
+dist
+**/dist
 
 .idea
 **/.idea
 
 package-lock.json
 **/package-lock.json
-
-test/integration/*.ts
 
 .git
 .DS_STORE

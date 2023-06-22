@@ -19,7 +19,7 @@ The NodeJS Runtime Interface Client package currently supports NodeJS versions:
 ### Creating a Docker Image for Lambda with the Runtime Interface Client
 First step is to choose the base image to be used. The supported Linux OS distributions are:
 
- - Amazon Linux 2
+ - Amazon Linux (2 and 2023)
  - Alpine
  - CentOS
  - Debian
@@ -75,10 +75,10 @@ COPY myFunction/* ${FUNCTION_DIR}
 
 WORKDIR ${FUNCTION_DIR}
 
+RUN npm install
+
 # If the dependency is not in package.json uncomment the following line
 # RUN npm install aws-lambda-ric
-
-RUN npm install
 
 # Grab a fresh slim copy of the image to reduce the final size
 FROM node:18-buster-slim

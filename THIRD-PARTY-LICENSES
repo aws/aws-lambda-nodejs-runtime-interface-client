@@ -234,7 +234,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 ------
 
-** node-addon-api; version 6.0.0 -- https://github.com/nodejs/node-addon-api
+** node-addon-api; version 6.1.0 -- https://github.com/nodejs/node-addon-api
 The MIT License (MIT)
 Copyright (c) 2017 Node.js API collaborators
 Node.js API collaborators listed at
@@ -282,7 +282,7 @@ SOFTWARE.
 
 ------
 
-** libcurl; version 7.84.0 -- https://github.com/curl/curl
+** libcurl; version 7.83.1 -- https://github.com/curl/curl
 Copyright (c) 1996 - 2020, Daniel Stenberg, <daniel@haxx.se>, and many
 contributors, see the THANKS file.
 

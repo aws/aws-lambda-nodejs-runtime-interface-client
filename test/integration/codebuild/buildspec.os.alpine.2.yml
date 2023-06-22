@@ -68,7 +68,7 @@ phases:
           --network "${OS_DISTRIBUTION}-network" \
           --entrypoint="" \
           "${IMAGE_TAG}" \
-          sh -c '/usr/bin/aws-lambda-rie ${NODE_BINARY_LOCATION} index.js'
+          sh -c '/usr/bin/aws-lambda-rie ${NODE_BINARY_LOCATION} index.mjs'
       - sleep 2
       - >
         docker run \
