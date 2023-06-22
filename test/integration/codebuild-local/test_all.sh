@@ -4,6 +4,7 @@
 set -euo pipefail
 
 CODEBUILD_IMAGE_TAG="${CODEBUILD_IMAGE_TAG:-al2/x86_64/standard/3.0}"
+DISTRO="${DISTRO:=""}"
 DRYRUN="${DRYRUN-0}"
 
 function usage {
@@ -54,7 +55,7 @@ main() {
 
     BUILDSPEC_YML_DIR="$1"
     HAS_YML=0
-    for f in "$BUILDSPEC_YML_DIR"/*.yml ; do
+    for f in "$BUILDSPEC_YML_DIR"/*"$DISTRO"*.yml ; do
         [ -f "$f" ] || continue;
         do_one_yaml "$f"
         HAS_YML=1

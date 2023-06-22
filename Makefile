@@ -15,7 +15,7 @@ test-smoke: setup-codebuild-agent
 	CODEBUILD_IMAGE_TAG=codebuild-agent test/integration/codebuild-local/test_one.sh test/integration/codebuild/buildspec.os.alpine.1.yml alpine 3.16 18
 
 test-integ: setup-codebuild-agent
-	CODEBUILD_IMAGE_TAG=codebuild-agent test/integration/codebuild-local/test_all.sh test/integration/codebuild
+	CODEBUILD_IMAGE_TAG=codebuild-agent DISTRO="$(DISTRO)" test/integration/codebuild-local/test_all.sh test/integration/codebuild
 
 copy-files:
 	npm run copy-files
