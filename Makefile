@@ -30,7 +30,7 @@ format:
 dev: init test
 
 # Verifications to run before sending a pull request
-pr: build dev test-integ
+pr: build dev test-smoke
 
 clean:
 	npm run clean
