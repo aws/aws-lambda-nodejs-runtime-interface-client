@@ -10,7 +10,7 @@ FROM amazonlinux:${DISTRO_VERSION} AS node-amazonlinux
 ARG RUNTIME_VERSION
 ARG DISTRO_VERSION
 # Install Py3 required to build Node16+
-RUN if [[ "${DISTRO_VERSION}" == "2" ]] ; then amazon-linux-extras install python3 ; fi
+RUN if [[ "${DISTRO_VERSION}" == "2" ]] ; then amazon-linux-extras install python3.8 && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1 ; fi
 # Install NodeJS
 RUN curl -sL https://rpm.nodesource.com/setup_${RUNTIME_VERSION}.x | bash - && \
     yum install -y nodejs
