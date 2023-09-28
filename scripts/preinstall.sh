@@ -68,7 +68,6 @@ else
                 --disable-unix-sockets \
                 --disable-verbose \
                 --disable-versioned-symbols \
-                --disable-websockets \
                 --with-pic \
                 --without-brotli \
                 --without-ca-bundle \
