@@ -2,7 +2,7 @@ version: 0.2
 
 env:
   variables:
-    OS_DISTRIBUTION: alpine
+    OS_DISTRIBUTION: debian
     NPX_BINARY_LOCATION: "/usr/local/bin/npx"
 batch:
   build-matrix:
@@ -14,10 +14,8 @@ batch:
       env:
         variables:
           DISTRO_VERSION:
-            - "3.15"
-            - "3.16"
+            - "bookworm"
           RUNTIME_VERSION:
-            - "14"
             - "16"
             - "18"
 phases:
@@ -42,9 +40,6 @@ phases:
         cp "test/integration/docker/Dockerfile.echo.${OS_DISTRIBUTION}" \
           "${SCRATCH_DIR}/Dockerfile.echo.${OS_DISTRIBUTION}.tmp"
       - >
-        echo "RUN apk add curl" >> \
-          "${SCRATCH_DIR}/Dockerfile.echo.${OS_DISTRIBUTION}.tmp"
-      - >
         echo "COPY ${SCRATCH_DIR}/${RIE} /usr/bin/${RIE}" >> \
           "${SCRATCH_DIR}/Dockerfile.echo.${OS_DISTRIBUTION}.tmp"
       - >
@@ -55,6 +50,9 @@ phases:
             echo "Performing DockerHub login . . ."
             docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
         fi
+      - >
+        echo "RUN apt-get update && apt-get install -y curl" >> \
+          "${SCRATCH_DIR}/Dockerfile.echo.${OS_DISTRIBUTION}.tmp"
       - echo "Building image ${IMAGE_TAG}"
       - >
         docker build . \

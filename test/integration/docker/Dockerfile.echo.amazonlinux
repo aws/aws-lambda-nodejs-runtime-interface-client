@@ -12,9 +12,16 @@ ARG DISTRO_VERSION
 # Install Py3 required to build Node16+
 RUN if [[ "${DISTRO_VERSION}" == "2" ]] ; then amazon-linux-extras install python3.8 && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1 ; fi
 # Install NodeJS
-RUN curl -sL https://rpm.nodesource.com/setup_${RUNTIME_VERSION}.x | bash - && \
-    yum install -y nodejs
-
+RUN if [[ "${RUNTIME_VERSION}" == "14" ]]; then \
+    yum install -y tar gzip xz && \
+    AARCH="$([[ "$(arch)" == "x86_64" ]] && echo "x64" || echo "arm64")" && \
+    NODE_URL="https://nodejs.org/download/release/v14.21.3/node-v14.21.3-linux-$AARCH.tar.xz" && \
+    curl -fL "$NODE_URL" | tar -C /usr --strip-components 1 -xJf - && \
+    yum clean all -q && rm -rf /var/cache/yum ; \
+else \
+    yum install https://rpm.nodesource.com/pub_${RUNTIME_VERSION}.x/nodistro/repo/nodesource-release-nodistro-1.noarch.rpm -y && \
+    yum install nodejs -y --setopt=nodesource-nodejs.module_hotfixes=1s ; \
+fi
 
 # Stage 2 - build function and dependencies
 FROM node-amazonlinux AS build-image
