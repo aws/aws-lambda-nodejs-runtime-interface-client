@@ -102,3 +102,4 @@ phases:
       - docker stop "${OS_DISTRIBUTION}-tester" || true
       - docker rm --force "${OS_DISTRIBUTION}-tester" || true
       - docker network rm "${OS_DISTRIBUTION}-network" || true
+      - docker rmi "${IMAGE_TAG}" || true
