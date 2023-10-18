@@ -12,10 +12,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up node
-      uses: actions/setup-node@v1
-      with:
-        node-version: '16'
     - name: Run 'pr' target
       run: make pr
 
@@ -24,10 +20,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up node
-      uses: actions/setup-node@v1
-      with:
-        node-version: '16'
     - name: Run alpine integration tests
       run: DISTRO=alpine make test-integ
 
@@ -36,10 +28,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up node
-      uses: actions/setup-node@v1
-      with:
-        node-version: '16'
     - name: Run amazonlinux integration tests
       run: DISTRO=amazonlinux make test-integ
 
@@ -48,10 +36,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up node
-      uses: actions/setup-node@v1
-      with:
-        node-version: '16'
     - name: Run centos integration tests
       run: DISTRO=centos make test-integ
 
@@ -60,10 +44,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up node
-      uses: actions/setup-node@v1
-      with:
-        node-version: '16'
     - name: Run debian integration tests
       run: DISTRO=debian make test-integ
 
@@ -72,9 +52,5 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up node
-      uses: actions/setup-node@v1
-      with:
-        node-version: '16'
     - name: Run ubuntu integration tests
       run: DISTRO=ubuntu make test-integ
