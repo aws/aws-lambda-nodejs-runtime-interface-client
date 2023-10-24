@@ -18,7 +18,7 @@ batch:
           DISTRO_VERSION:
             - "3.18"
           RUNTIME_VERSION:
-            - "18"
+            - "20"
 phases:
   pre_build:
     commands:

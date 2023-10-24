@@ -17,6 +17,7 @@ batch:
             - "2023"
           RUNTIME_VERSION:
             - "18"
+            - "20"
 phases:
   pre_build:
     commands:

@@ -19,6 +19,7 @@ batch:
           RUNTIME_VERSION:
             - "16"
             - "18"
+            - "20"
 phases:
   pre_build:
     commands:

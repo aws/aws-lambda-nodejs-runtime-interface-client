@@ -18,6 +18,7 @@ batch:
             - "22.04"
           RUNTIME_VERSION:
             - "18"
+            - "20"
 phases:
   pre_build:
     commands:
