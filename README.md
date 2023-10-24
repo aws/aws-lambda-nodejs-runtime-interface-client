@@ -13,6 +13,7 @@ The NodeJS Runtime Interface Client package currently supports NodeJS versions:
  - 14.x
  - 16.x
  - 18.x
+ - 20.x
 
 ## Usage
 
