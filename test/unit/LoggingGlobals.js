@@ -11,6 +11,20 @@
  * objects under test.
  */
 
+const levels = Object.freeze({
+  TRACE: { name: 'TRACE' },
+  DEBUG: { name: 'DEBUG' },
+  INFO: { name: 'INFO' },
+  WARN: { name: 'WARN' },
+  ERROR: { name: 'ERROR' },
+  FATAL: { name: 'FATAL' },
+});
+
+const formats = Object.freeze({
+  TEXT: { name: 'TEXT' },
+  JSON: { name: 'JSON' },
+});
+
 module.exports.consoleSnapshot = () => {
   let log = console.log;
   let debug = console.debug;
@@ -47,5 +61,27 @@ module.exports.captureStream = function captureStream(stream) {
     },
     unhook: () => (stream.write = originalWrite),
     captured: () => buf,
+    resetBuffer: () => (buf = ''),
   };
+};
+
+module.exports.loggingConfig = class loggingConfig {
+  turnOnStructuredLogging() {
+    process.env['AWS_LAMBDA_LOG_FORMAT'] = formats.JSON.name;
+  }
+
+  turnOffStructuredLogging() {
+    delete process.env['AWS_LAMBDA_LOG_FORMAT'];
+  }
+
+  setLogLevel(level) {
+    if (levels[level] === undefined) {
+      return;
+    }
+    process.env['AWS_LAMBDA_LOG_LEVEL'] = levels[level].name;
+  }
+
+  resetLogLevel() {
+    delete process.env['AWS_LAMBDA_LOG_LEVEL'];
+  }
 };

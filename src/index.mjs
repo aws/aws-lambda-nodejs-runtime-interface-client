@@ -26,13 +26,13 @@ export async function run(appRootOrHandler, handler = '') {
   };
 
   process.on('uncaughtException', (error) => {
-    console.error('Uncaught Exception', Errors.toFormatted(error));
+    LogPatch.structuredConsole.logError('Uncaught Exception', error);
     errorCallbacks.uncaughtException(error);
   });
 
   process.on('unhandledRejection', (reason, promise) => {
     let error = new Errors.UnhandledPromiseRejection(reason, promise);
-    console.error('Unhandled Promise Rejection', Errors.toFormatted(error));
+    LogPatch.structuredConsole.logError('Unhandled Promise Rejection', error);
     errorCallbacks.unhandledRejection(error);
   });
 

@@ -5,7 +5,7 @@
 'use strict';
 
 const BeforeExitListener = require('./BeforeExitListener.js');
-const { toFormatted, intoError } = require('./Errors');
+const { structuredConsole } = require('./LogPatch');
 
 /**
  * Build the callback function and the part of the context which exposes
@@ -20,7 +20,7 @@ const { toFormatted, intoError } = require('./Errors');
  */
 function _rawCallbackContext(client, id, scheduleNext) {
   const postError = (err, callback) => {
-    console.error('Invoke Error', toFormatted(intoError(err)));
+    structuredConsole.logError('Invoke Error', err);
     client.postInvocationError(err, id, callback);
   };
 
