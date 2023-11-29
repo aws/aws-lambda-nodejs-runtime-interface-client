@@ -41,8 +41,7 @@ public:
             return;
         }
 
-        // TODO: See if json parsing works on V8:Buffer objects, which might be a way to reduce copying large payloads
-        response = outcome.get_result();
+        response = std::move(outcome).get_result();
     }
 
     Napi::Value Promise() {
@@ -72,12 +71,12 @@ public:
         headers.Set(
                 Napi::String::New(env, "lambda-runtime-invoked-function-arn"),
                 Napi::String::New(env, response.function_arn.c_str()));
-        if (response.client_context != "") {
+        if (!response.client_context.empty()) {
             headers.Set(
                     Napi::String::New(env, "lambda-runtime-client-context"),
                     Napi::String::New(env, response.client_context.c_str()));
         }
-        if (response.cognito_identity != "") {
+        if (!response.cognito_identity.empty()) {
             headers.Set(
                     Napi::String::New(env, "lambda-runtime-cognito-identity"),
                     Napi::String::New(env, response.cognito_identity.c_str()));
