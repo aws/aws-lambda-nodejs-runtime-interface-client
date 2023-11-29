@@ -50,7 +50,7 @@ public:
 
     void OnOK() override {
         Napi::Env env = Env();
-        auto response_data = Napi::String::New(env, response.payload.c_str());
+        auto response_data = Napi::String::New(env, response.payload);
 
         // TODO: The current javascript code (InvokeContext.js) to handle the header values itself.
         // These type conversions might be replaced by returning the final context object.
@@ -64,22 +64,22 @@ public:
                 ));
         headers.Set(
                 Napi::String::New(env, "lambda-runtime-aws-request-id"),
-                Napi::String::New(env, response.request_id.c_str()));
+                Napi::String::New(env, response.request_id));
         headers.Set(
                 Napi::String::New(env, "lambda-runtime-trace-id"),
-                Napi::String::New(env, response.xray_trace_id.c_str()));
+                Napi::String::New(env, response.xray_trace_id));
         headers.Set(
                 Napi::String::New(env, "lambda-runtime-invoked-function-arn"),
-                Napi::String::New(env, response.function_arn.c_str()));
+                Napi::String::New(env, response.function_arn));
         if (!response.client_context.empty()) {
             headers.Set(
                     Napi::String::New(env, "lambda-runtime-client-context"),
-                    Napi::String::New(env, response.client_context.c_str()));
+                    Napi::String::New(env, response.client_context));
         }
         if (!response.cognito_identity.empty()) {
             headers.Set(
                     Napi::String::New(env, "lambda-runtime-cognito-identity"),
-                    Napi::String::New(env, response.cognito_identity.c_str()));
+                    Napi::String::New(env, response.cognito_identity));
         }
 
         auto ret = Napi::Object::New(env);
