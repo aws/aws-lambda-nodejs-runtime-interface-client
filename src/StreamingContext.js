@@ -5,13 +5,10 @@
 'use strict';
 
 const BeforeExitListener = require('./BeforeExitListener.js');
-const {
-  InvalidStreamingOperation,
-  toFormatted,
-  intoError,
-} = require('./Errors');
+const { InvalidStreamingOperation } = require('./Errors');
 const { verbose, vverbose } = require('./VerboseLog.js').logger('STREAM');
 const { tryCallFail } = require('./ResponseStream');
+const { structuredConsole } = require('./LogPatch');
 
 /**
  * Construct the base-context object which includes the required flags and
@@ -67,7 +64,7 @@ module.exports.build = function (client, id, scheduleNext, options) {
 
       return {
         fail: (err, callback) => {
-          console.error('Invoke Error', toFormatted(intoError(err)));
+          structuredConsole.logError('Invoke Error', err);
 
           tryCallFail(responseStream, err, callback);
         },

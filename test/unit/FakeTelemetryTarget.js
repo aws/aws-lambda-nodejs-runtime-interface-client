@@ -9,7 +9,16 @@ const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 
-const _LOG_IDENTIFIER = Buffer.from('a55a0003', 'hex');
+const levels = Object.freeze({
+  TRACE: { name: 'TRACE', tlvMask: 0b00100 },
+  DEBUG: { name: 'DEBUG', tlvMask: 0b01000 },
+  INFO: { name: 'INFO', tlvMask: 0b01100 },
+  WARN: { name: 'WARN', tlvMask: 0b10000 },
+  ERROR: { name: 'ERROR', tlvMask: 0b10100 },
+  FATAL: { name: 'FATAL', tlvMask: 0b11000 },
+});
+
+const TextName = 'TEXT';
 
 /**
  * A fake implementation of the multilne logging protocol.
@@ -55,7 +64,7 @@ module.exports = class FakeTelemetryTarget {
    * - the prefix is malformed
    * - there aren't enough bytes
    */
-  readLine() {
+  readLine(level = 'INFO', format = TextName, expectEmpty = false) {
     let readLength = () => {
       let logPrefix = Buffer.alloc(16);
       let actualReadBytes = fs.readSync(
@@ -64,17 +73,34 @@ module.exports = class FakeTelemetryTarget {
         0,
         logPrefix.length,
       );
+
+      if (expectEmpty) {
+        assert.strictEqual(
+          actualReadBytes,
+          0,
+          `Expected actualReadBytes[${actualReadBytes}] = 0`,
+        );
+        return 0;
+      }
+
       assert.strictEqual(
         actualReadBytes,
         logPrefix.length,
         `Expected actualReadBytes[${actualReadBytes}] = ${logPrefix.length}`,
       );
+
+      var _tlvHeader;
+      if (format === TextName)
+        _tlvHeader = (0xa55a0003 | levels[level].tlvMask) >>> 0;
+      else _tlvHeader = (0xa55a0002 | levels[level].tlvMask) >>> 0;
+
+      let _logIdentifier = Buffer.from(_tlvHeader.toString(16), 'hex');
       assert.strictEqual(
-        logPrefix.lastIndexOf(_LOG_IDENTIFIER),
+        logPrefix.lastIndexOf(_logIdentifier),
         0,
         `log prefix ${logPrefix.toString(
           'hex',
-        )} should start with ${_LOG_IDENTIFIER.toString('hex')}`,
+        )} should start with ${_logIdentifier.toString('hex')}`,
       );
       let len = logPrefix.readUInt32BE(4);
       // discard the timestamp
@@ -83,6 +109,9 @@ module.exports = class FakeTelemetryTarget {
     };
 
     let lineLength = readLength();
+    if (lineLength === 0) {
+      return '';
+    }
     let lineBytes = Buffer.alloc(lineLength);
     let actualLineSize = fs.readSync(
       this.readTarget,
