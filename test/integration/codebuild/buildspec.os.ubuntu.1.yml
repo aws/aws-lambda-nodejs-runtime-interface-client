@@ -18,7 +18,6 @@ batch:
             - "20.04"
             - "22.04"
           RUNTIME_VERSION:
-            - "14"
             - "16"
 phases:
   pre_build:

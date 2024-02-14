@@ -16,7 +16,6 @@ batch:
           DISTRO_VERSION:
             - "3.16"
           RUNTIME_VERSION:
-            - "14"
             - "16"
             - "18"
 phases:

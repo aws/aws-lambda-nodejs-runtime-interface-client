@@ -17,7 +17,6 @@ batch:
             - "stream8"
             - "stream9"
           RUNTIME_VERSION:
-            - "14"
             - "16"
             - "18"
             - "20"

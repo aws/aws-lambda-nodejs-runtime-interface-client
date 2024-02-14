@@ -10,7 +10,6 @@ You can include this package in your preferred base image to make that base imag
 
 ## Requirements
 The NodeJS Runtime Interface Client package currently supports NodeJS versions:
- - 14.x
  - 16.x
  - 18.x
  - 20.x
