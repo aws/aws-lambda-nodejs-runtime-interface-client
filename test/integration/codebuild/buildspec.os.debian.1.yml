@@ -17,7 +17,6 @@ batch:
             - "buster"
             - "bullseye"
           RUNTIME_VERSION:
-            - "14"
             - "16"
             - "18"
             - "20"

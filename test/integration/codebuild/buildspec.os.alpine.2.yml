@@ -16,9 +16,9 @@ batch:
       env:
         variables:
           DISTRO_VERSION:
-            - "3.16"
+            - "3.18"
           RUNTIME_VERSION:
-            - "14"
+            - "20"
 phases:
   pre_build:
     commands:
