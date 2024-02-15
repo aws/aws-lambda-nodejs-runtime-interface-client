@@ -50,7 +50,7 @@ class XRayFormattedCause {
 
     let stack = [];
     if (err.stack) {
-      let stackLines = err.stack.split('\n');
+      let stackLines = err.stack.replace(/\x7F/g, '%7F').split('\n');
       stackLines.shift();
 
       stackLines.forEach((stackLine) => {
@@ -79,8 +79,8 @@ class XRayFormattedCause {
 
     this.exceptions = [
       {
-        type: err.name,
-        message: err.message,
+        type: err.name?.replace(/\x7F/g, '%7F'),
+        message: err.message?.replace(/\x7F/g, '%7F'),
         stack: stack,
       },
     ];

@@ -38,9 +38,9 @@ function toRapidResponse(error) {
   try {
     if (util.types.isNativeError(error) || _isError(error)) {
       return {
-        errorType: error.name,
-        errorMessage: error.message,
-        trace: error.stack.split('\n'),
+        errorType: error.name?.replace(/\x7F/g, '%7F'),
+        errorMessage: error.message?.replace(/\x7F/g, '%7F'),
+        trace: error.stack.replace(/\x7F/g, '%7F').split('\n'),
       };
     } else {
       return {

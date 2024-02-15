@@ -19,3 +19,14 @@ describe('Formatted Error Logging', () => {
     loggedError.should.have.property('trace').with.length(11);
   });
 });
+
+describe('Invalid chars in HTTP header', () => {
+  it('should be replaced', () => {
+    let errorWithInvalidChar = new Error('\x7F \x7F');
+    errorWithInvalidChar.name = 'ErrorWithInvalidChar';
+
+    let loggedError = Errors.toRapidResponse(errorWithInvalidChar);
+    loggedError.should.have.property('errorType', 'ErrorWithInvalidChar');
+    loggedError.should.have.property('errorMessage', '%7F %7F');
+  });
+});
