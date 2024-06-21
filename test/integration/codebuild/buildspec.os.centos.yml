@@ -14,10 +14,8 @@ batch:
       env:
         variables:
           DISTRO_VERSION:
-            - "stream8"
             - "stream9"
           RUNTIME_VERSION:
-            - "16"
             - "18"
             - "20"
 phases:

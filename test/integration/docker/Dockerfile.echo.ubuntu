@@ -34,7 +34,8 @@ RUN apt-get update && \
         automake \
         libtool \
         wget \
-        libcurl4-openssl-dev
+        libcurl4-openssl-dev \
+        python3
 # Install a modern CMake
 RUN wget --quiet -O cmake-install https://github.com/Kitware/CMake/releases/download/v3.20.0/cmake-3.20.0-linux-${ARCHITECTURE}.sh && \
     sh cmake-install --skip-license --prefix=/usr --exclude-subdirectory;

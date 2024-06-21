@@ -9,7 +9,7 @@ FROM quay.io/centos/centos:${DISTRO_VERSION} AS node-centos
 # Include global arg in this stage of the build
 ARG RUNTIME_VERSION
 # Install NodeJS
-RUN curl -sL https://rpm.nodesource.com/setup_${RUNTIME_VERSION}.x | bash - && \
+RUN yum module enable -y nodejs:${RUNTIME_VERSION} && \
     yum install -y nodejs
 
 
