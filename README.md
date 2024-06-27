@@ -62,12 +62,17 @@ ARG FUNCTION_DIR
 
 # Install aws-lambda-cpp build dependencies
 RUN apt-get update && \
-    apt-get install -y \
-    g++ \
-    make \
-    cmake \
-    unzip \
-    libcurl4-openssl-dev
+  apt-get install -y \
+  g++ \
+  make \
+  cmake \
+  unzip \
+  autoconf \
+  libtool \
+  libcurl4-openssl-dev
+
+# Cleanup
+RUN apt-get -qq clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Copy function code
 RUN mkdir -p ${FUNCTION_DIR}
