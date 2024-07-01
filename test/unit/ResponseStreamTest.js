@@ -9,10 +9,10 @@ const ServerMock = require('mock-http-server');
 const {
   createResponseStream,
   tryCallFail,
-} = require('../../src/ResponseStream.js');
-const { HttpResponseStream } = require('../../src/HttpResponseStream.js');
-const { InvalidStreamingOperation } = require('../../src/Errors.js');
-const { verbose, vverbose, vvverbose } = require('../../src/VerboseLog').logger(
+} = require('lambda-runtime/ResponseStream.js');
+const { HttpResponseStream } = require('lambda-runtime/HttpResponseStream.js');
+const { InvalidStreamingOperation } = require('lambda-runtime/Errors.js');
+const { verbose, vverbose, vvverbose } = require('lambda-runtime/VerboseLog').logger(
   'TEST',
 );
 const Throttle = require('throttle');

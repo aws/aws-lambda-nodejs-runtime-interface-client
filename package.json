@@ -59,6 +59,7 @@
     "node-gyp": "9.4.0"
   },
   "devDependencies": {
+    "lambda-runtime": "file:./src/",
     "esbuild": "^0.18.3",
     "eslint": "8.42.0",
     "eslint-config-prettier": "8.8.0",

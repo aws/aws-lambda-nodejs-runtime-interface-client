@@ -7,8 +7,8 @@
 const util = require('util');
 
 let should = require('should');
-let LogPatch = require('../../src/LogPatch');
-let Errors = require('../../src/Errors');
+let LogPatch = require('lambda-runtime/LogPatch');
+let Errors = require('lambda-runtime/Errors');
 let assert = require('assert');
 
 let {

@@ -5,9 +5,9 @@
 'use strict';
 
 require('should');
-const StreamingContext = require('../../src/StreamingContext.js');
+const StreamingContext = require('lambda-runtime/StreamingContext.js');
 const { PassThrough } = require('stream');
-const BeforeExitListener = require('../../src/BeforeExitListener.js');
+const BeforeExitListener = require('lambda-runtime/BeforeExitListener.js');
 
 class MockRapidClient {
   constructor() {

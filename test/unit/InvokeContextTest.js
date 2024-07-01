@@ -7,7 +7,7 @@
 require('should');
 const sleep = require('util').promisify(setTimeout);
 
-let InvokeContext = require('../../src/InvokeContext');
+let InvokeContext = require('lambda-runtime/InvokeContext');
 
 describe('Getting remaining invoke time', () => {
   it('should reduce by at least elapsed time', async () => {
