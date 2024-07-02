@@ -5,7 +5,7 @@
 'use strict';
 
 require('should');
-let Errors = require('../../src/Errors');
+let Errors = require('lambda-runtime/Errors');
 
 describe('Formatted Error Logging', () => {
   it('should fall back to a minimal error format when an exception occurs', () => {

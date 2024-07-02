@@ -44,7 +44,7 @@ module.exports = class RAPIDClient {
    */
   postInvocationResponse(response, id, callback) {
     let bodyString = _trySerializeResponse(response);
-    this.nativeClient.done(id, bodyString);
+    this.nativeClient.done(encodeURIComponent(id), bodyString);
     callback();
   }
 
@@ -65,7 +65,10 @@ module.exports = class RAPIDClient {
         hostname: this.hostname,
         method: 'POST',
         port: this.port,
-        path: '/2018-06-01/runtime/invocation/' + id + '/response',
+        path:
+          '/2018-06-01/runtime/invocation/' +
+          encodeURIComponent(id) +
+          '/response',
         highWaterMark: options?.highWaterMark,
       },
     });
@@ -108,7 +111,7 @@ module.exports = class RAPIDClient {
     let response = Errors.toRapidResponse(error);
     let bodyString = _trySerializeResponse(response);
     let xrayString = XRayError.formatted(error);
-    this.nativeClient.error(id, bodyString, xrayString);
+    this.nativeClient.error(encodeURIComponent(id), bodyString, xrayString);
     callback();
   }
 

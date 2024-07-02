@@ -112,6 +112,7 @@ module.exports = class FakeTelemetryTarget {
     if (lineLength === 0) {
       return '';
     }
+
     let lineBytes = Buffer.alloc(lineLength);
     let actualLineSize = fs.readSync(
       this.readTarget,
