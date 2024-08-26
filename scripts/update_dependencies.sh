@@ -16,6 +16,7 @@ wget -c https://github.com/curl/curl/archive/refs/tags/curl-$CURL_VERSION.tar.gz
 (
   cd curl-curl-$CURL_VERSION && \
     patch -p1 < ../patches/0001-curl-disable_wakeup.patch
+    patch -p1 < ../patches/libcurl-configure-template.patch
 )
 
 # Pack again and remove the folder
