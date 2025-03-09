@@ -21,16 +21,6 @@ RUN apk add --update-cache \
         python3 \
         libcurl
 
-# AWS Lambda CPP and libcurl rely on backtrace which requires libexecinfo from Alpine.
-# Since starting from Alpine3.17 libexecinfo is no longer available, temporarily source it from Alpine3.16
-# while awaiting an upstream resolution in AWS Lambda CPP.
-RUN if [[ "${DISTRO_VERSION}" == "3.17" ]] || [[ "${DISTRO_VERSION}" == "3.18" ]] ; \
-then \
-    apk add --update-cache --repository=https://dl-cdn.alpinelinux.org/alpine/v3.16/main/ libexecinfo-dev ; \
-else \
-    apk add --update-cache libexecinfo-dev ; \
-fi
-
 # Include global arg in this stage of the build
 ARG FUNCTION_DIR
 # Create function directory
