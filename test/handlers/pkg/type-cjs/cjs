@@ -1,0 +1,8 @@
+/** Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved. */
+
+'use strict';
+// This is a CommonJS module without file extension
+
+module.exports.handler = async (event) => {
+    return "Hello from extensionless CJS";
+};

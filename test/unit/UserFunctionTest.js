@@ -10,6 +10,7 @@ const {
   HandlerNotFound,
   ImportModuleError,
   MalformedHandlerName,
+  UserCodeSyntaxError,
 } = require('lambda-runtime/Errors.js');
 const UserFunction = require('lambda-runtime/UserFunction.js');
 
@@ -249,6 +250,166 @@ describe('UserFunction.load method', () => {
     const response = handler('moon');
 
     response.should.be.resolvedWith('moon');
+  });
+
+  it('should successfully load a CJS handler from extensionless file (no package.json)', async () => {
+    const handler = await UserFunction.load(
+      path.join(HANDLERS_ROOT, 'extensionless'),
+      'index.handler',
+    );
+    const response = await handler('test event');
+
+    response.should.equal('Hello from extensionless CJS');
+  });
+
+  it('should fail to load ESM syntax from extensionless file (no package.json)', async () => {
+    await UserFunction.load(
+      path.join(HANDLERS_ROOT, 'extensionless'),
+      'esm-extensionless.handler',
+    ).should.be.rejectedWith(UserCodeSyntaxError);
+  });
+
+  it('should load CJS handler from extensionless file with type:commonjs', async () => {
+    // package.json is ignored in the case of extensionless
+    const handler = await UserFunction.load(
+      path.join(HANDLERS_ROOT, 'pkg', 'type-cjs'),
+      'cjs.handler',
+    );
+    const response = await handler('test event');
+
+    response.should.equal('Hello from extensionless CJS');
+  });
+
+  it('should fail to load ESM handler from extensionless file with type:commonjs', async () => {
+    // package.json is ignored in the case of extensionless
+    await UserFunction.load(
+      path.join(HANDLERS_ROOT, 'pkg', 'type-cjs'),
+      'esm.handler',
+    ).should.be.rejectedWith(UserCodeSyntaxError);
+  });
+
+  it('should load CJS handler from extensionless file with type:module', async () => {
+    // package.json is ignored in the case of extensionless
+    const handler = await UserFunction.load(
+      path.join(HANDLERS_ROOT, 'pkg', 'type-esm'),
+      'cjs.handler',
+    );
+    const response = await handler('test event');
+
+    response.should.equal('Hello from extensionless CJS');
+  });
+
+  it('should fail to load ESM handler from extensionless file with type:module', async () => {
+    // package.json is ignored in the case of extensionless
+    await UserFunction.load(
+      path.join(HANDLERS_ROOT, 'pkg', 'type-esm'),
+      'esm.handler',
+    ).should.be.rejectedWith(UserCodeSyntaxError);
+  });
+
+  it('should load CJS handler from JS file with type:commonjs', async () => {
+    const handler = await UserFunction.load(
+      path.join(HANDLERS_ROOT, 'pkg', 'type-cjs'),
+      'cjsModule.handler',
+    );
+    const response = await handler('test event');
+
+    response.should.equal('Hello from CJS.js');
+  });
+
+  it('should fail to load ESM handler from JS file with type:commonjs', async () => {
+    await UserFunction.load(
+      path.join(HANDLERS_ROOT, 'pkg', 'type-cjs'),
+      'esmModule.handler',
+    ).should.be.rejectedWith(UserCodeSyntaxError);
+  });
+
+  it('should load ESM handler from JS file with type:module', async () => {
+    const handler = await UserFunction.load(
+      path.join(HANDLERS_ROOT, 'pkg', 'type-esm'),
+      'esmModule.handler',
+    );
+    const response = await handler('test event');
+
+    response.should.equal('Hello from ESM.js');
+  });
+
+  it('should fail to load CJS handler from JS file with type:module', async () => {
+    await UserFunction.load(
+      path.join(HANDLERS_ROOT, 'pkg', 'type-esm'),
+      'cjsModule.handler',
+    ).should.be.rejectedWith(
+      ReferenceError,
+      /module is not defined in ES module scope/,
+    );
+  });
+
+  it('should fail to load ESM handler from JS file without type context', async () => {
+    await UserFunction.load(
+      path.join(HANDLERS_ROOT, 'pkg-less'),
+      'esmModule.handler',
+    ).should.be.rejectedWith(UserCodeSyntaxError);
+  });
+
+  it('should fail to load CJS handler from MJS file without type context', async () => {
+    await UserFunction.load(
+      path.join(HANDLERS_ROOT, 'pkg-less'),
+      'cjsInMjs.handler',
+    ).should.be.rejectedWith(
+      ReferenceError,
+      /module is not defined in ES module scope/,
+    );
+  });
+
+  it('should fail to load ESM handler from CJS file without type context', async () => {
+    await UserFunction.load(
+      path.join(HANDLERS_ROOT, 'pkg-less'),
+      'esmInCjs.handler',
+    ).should.be.rejectedWith(UserCodeSyntaxError);
+  });
+
+  it('should fail to load mixed context handler from JS file without type context', async () => {
+    await UserFunction.load(
+      path.join(HANDLERS_ROOT, 'pkg-less'),
+      'cjsAndMjs.handler',
+    ).should.be.rejectedWith(UserCodeSyntaxError);
+  });
+
+  it('should successfully load ESM handler importing from CJS', async () => {
+    const handler = await UserFunction.load(
+      path.join(HANDLERS_ROOT, 'pkg-less'),
+      'esmImportCjs.handler',
+    );
+
+    const response = await handler();
+    response.should.equal('Hello from CJS!');
+  });
+
+  it('should fail when CJS tries to import from ESM using static import', async () => {
+    await UserFunction.load(
+      path.join(HANDLERS_ROOT, 'pkg-less'),
+      'cjsImportESM.handler',
+    ).should.be.rejectedWith(UserCodeSyntaxError);
+  });
+
+  it('should successfully load CJS handler importing from CJS', async () => {
+    const handler = await UserFunction.load(
+      path.join(HANDLERS_ROOT, 'pkg-less'),
+      'cjsImportCjs.handler',
+    );
+
+    const response = await handler();
+    response.should.equal('Hello from CJS!');
+  });
+
+  it('should fail when using require in .mjs', async () => {
+    await UserFunction.load(
+      path.join(HANDLERS_ROOT, 'pkg-less'),
+      'esmRequireCjs.handler',
+    ).should.be.rejectedWith(
+      ReferenceError,
+      /require is not defined in ES module scope/,
+    );
   });
 });
 
