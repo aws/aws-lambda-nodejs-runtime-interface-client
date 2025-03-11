@@ -48,3 +48,7 @@ dist/
 
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
+
+deps/artifacts/
+deps/aws-lambda-cpp*/
+deps/curl*/
