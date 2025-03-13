@@ -165,6 +165,13 @@ Then,
 * to run integration tests: `make test-integ`
 * to run smoke tests: `make test-smoke`
 
+### Raising a PR
+When modifying dependencies (`package.json`), make sure to:
+1. Run `npm install` to generate an updated `package-lock.json`
+2. Commit both `package.json` and `package-lock.json` together
+
+We require package-lock.json to be checked in to ensure consistent installations across development environments.
+
 ### Troubleshooting
 
 While running integration tests, you might encounter the Docker Hub rate limit error with the following body:
