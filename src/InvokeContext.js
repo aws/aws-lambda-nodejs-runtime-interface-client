@@ -18,6 +18,7 @@ const INVOKE_HEADER = {
   AWSRequestId: 'lambda-runtime-aws-request-id',
   DeadlineMs: 'lambda-runtime-deadline-ms',
   XRayTrace: 'lambda-runtime-trace-id',
+  TenantId: 'lambda-runtime-aws-tenant-id',
 };
 
 module.exports = class InvokeContext {
@@ -91,6 +92,7 @@ module.exports = class InvokeContext {
       ),
       invokedFunctionArn: this.headers[INVOKE_HEADER.ARN],
       awsRequestId: this.headers[INVOKE_HEADER.AWSRequestId],
+      tenantId: this.headers[INVOKE_HEADER.TenantId],
       getRemainingTimeInMillis: function () {
         return deadline - Date.now();
       },

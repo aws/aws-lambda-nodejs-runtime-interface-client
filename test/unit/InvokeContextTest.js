@@ -35,3 +35,32 @@ describe('Getting remaining invoke time', () => {
     remainingTime.should.lessThanOrEqual(1000);
   });
 });
+
+describe('Verifying tenant id', () => {
+  it('should return undefined if tenant id is not set', () => {
+    let ctx = new InvokeContext({});
+
+    (ctx._headerData().tenantId === undefined).should.be.true();
+  });
+  it('should return undefined if tenant id is set to undefined', () => {
+    let ctx = new InvokeContext({
+      'lambda-runtime-aws-tenant-id': undefined,
+    });
+
+    (ctx._headerData().tenantId === undefined).should.be.true();
+  });
+  it('should return empty if tenant id is set to empty string', () => {
+    let ctx = new InvokeContext({
+      'lambda-runtime-aws-tenant-id': '',
+    });
+
+    (ctx._headerData().tenantId === '').should.be.true();
+  });
+  it('should return the same id if a valid tenant id is set', () => {
+    let ctx = new InvokeContext({
+      'lambda-runtime-aws-tenant-id': 'blue',
+    });
+
+    ctx._headerData().tenantId.should.equal('blue');
+  });
+});

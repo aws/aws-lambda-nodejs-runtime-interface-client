@@ -1,0 +1,40 @@
+diff --git a/include/aws/lambda-runtime/runtime.h b/include/aws/lambda-runtime/runtime.h
+index f7cb8ef..833b69d 100644
+--- a/include/aws/lambda-runtime/runtime.h
++++ b/include/aws/lambda-runtime/runtime.h
+@@ -56,6 +56,11 @@ struct invocation_request {
+      */
+     std::string function_arn;
+ 
++    /**
++     * The Tenant ID of the current invocation.
++     */
++    std::string tenant_id;
++
+     /**
+      * Function execution deadline counted in milliseconds since the Unix epoch.
+      */
+diff --git a/src/runtime.cpp b/src/runtime.cpp
+index d1e655f..bcc217d 100644
+--- a/src/runtime.cpp
++++ b/src/runtime.cpp
+@@ -40,6 +40,7 @@ static constexpr auto CLIENT_CONTEXT_HEADER = "lambda-runtime-client-context";
+ static constexpr auto COGNITO_IDENTITY_HEADER = "lambda-runtime-cognito-identity";
+ static constexpr auto DEADLINE_MS_HEADER = "lambda-runtime-deadline-ms";
+ static constexpr auto FUNCTION_ARN_HEADER = "lambda-runtime-invoked-function-arn";
++static constexpr auto TENANT_ID_HEADER = "lambda-runtime-aws-tenant-id";
+ 
+ enum Endpoints {
+     INIT,
+@@ -296,6 +297,11 @@ runtime::next_outcome runtime::get_next()
+         req.function_arn = std::move(out).get_result();
+     }
+ 
++    out = resp.get_header(TENANT_ID_HEADER);
++    if (out.is_success()) {
++        req.tenant_id = std::move(out).get_result();
++    }
++
+     out = resp.get_header(DEADLINE_MS_HEADER);
+     if (out.is_success()) {
+         auto const& deadline_string = std::move(out).get_result();

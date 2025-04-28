@@ -82,6 +82,11 @@ public:
                     Napi::String::New(env, "lambda-runtime-cognito-identity"),
                     Napi::String::New(env, response.cognito_identity.c_str()));
         }
+        if (response.tenant_id != "") {
+            headers.Set(
+                    Napi::String::New(env, "lambda-runtime-aws-tenant-id"),
+                    Napi::String::New(env, response.tenant_id.c_str()));
+        }
 
         auto ret = Napi::Object::New(env);
         ret.Set(Napi::String::New(env, "bodyJson"), response_data);
