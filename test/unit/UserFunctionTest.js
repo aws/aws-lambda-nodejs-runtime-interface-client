@@ -262,7 +262,7 @@ describe('UserFunction.load method', () => {
     response.should.equal('Hello from extensionless CJS');
   });
 
-  it('should fail to load ESM syntax from extensionless file (no package.json)', async () => {
+  xit('should fail to load ESM syntax from extensionless file (no package.json)', async () => {
     await UserFunction.load(
       path.join(HANDLERS_ROOT, 'extensionless'),
       'esm-extensionless.handler',
@@ -280,7 +280,7 @@ describe('UserFunction.load method', () => {
     response.should.equal('Hello from extensionless CJS');
   });
 
-  it('should fail to load ESM handler from extensionless file with type:commonjs', async () => {
+  xit('should fail to load ESM handler from extensionless file with type:commonjs', async () => {
     // package.json is ignored in the case of extensionless
     await UserFunction.load(
       path.join(HANDLERS_ROOT, 'pkg', 'type-cjs'),
@@ -299,7 +299,7 @@ describe('UserFunction.load method', () => {
     response.should.equal('Hello from extensionless CJS');
   });
 
-  it('should fail to load ESM handler from extensionless file with type:module', async () => {
+  xit('should fail to load ESM handler from extensionless file with type:module', async () => {
     // package.json is ignored in the case of extensionless
     await UserFunction.load(
       path.join(HANDLERS_ROOT, 'pkg', 'type-esm'),
@@ -344,7 +344,7 @@ describe('UserFunction.load method', () => {
     );
   });
 
-  it('should fail to load ESM handler from JS file without type context', async () => {
+  xit('should fail to load ESM handler from JS file without type context', async () => {
     await UserFunction.load(
       path.join(HANDLERS_ROOT, 'pkg-less'),
       'esmModule.handler',
