@@ -16,7 +16,6 @@ batch:
           DISTRO_VERSION:
             - "bookworm"
           RUNTIME_VERSION:
-            - "16"
             - "18"
             - "20"
 phases:
