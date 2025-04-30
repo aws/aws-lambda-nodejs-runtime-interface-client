@@ -54,4 +54,4 @@ deps/aws-lambda-cpp*/
 deps/curl*/
 
 # Local codebuild
-codebuild.
+codebuild.*/
