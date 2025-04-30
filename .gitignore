@@ -52,3 +52,6 @@ dist/
 deps/artifacts/
 deps/aws-lambda-cpp*/
 deps/curl*/
+
+# Local codebuild
+codebuild.
