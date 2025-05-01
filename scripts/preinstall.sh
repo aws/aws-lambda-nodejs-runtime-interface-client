@@ -26,7 +26,7 @@ else
     (
         # Build Curl
         cd curl-curl-$CURL_VERSION && \
-            ./buildconf && \
+            autoreconf -fi && \
             ./configure \
                 --prefix "$ARTIFACTS_DIR" \
                 --disable-alt-svc \
