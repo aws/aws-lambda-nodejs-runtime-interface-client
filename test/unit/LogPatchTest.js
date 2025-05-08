@@ -415,7 +415,36 @@ describe('The multiline log patch', () => {
         );
         receivedMessage.should.have.property('level', logFunctions[fIdx][1]);
         receivedMessage.should.have.property('requestId', EXPECTED_ID);
+        receivedMessage.should.not.have.property('tenantId');
       }
+    });
+
+    it('should format messages with tenant id as json correctly', () => {
+      const EXPECTED_TENANT_ID = 'tenantId';
+      LogPatch.setCurrentTenantId(EXPECTED_TENANT_ID);
+
+      for (let fIdx = 0; fIdx < logFunctions.length; fIdx++) {
+        logFunctions[fIdx][0]('structured logging with tenant id');
+        let receivedMessage = telemetryTarget.readLine(
+          logFunctions[fIdx][1],
+          'JSON',
+        );
+        receivedMessage = JSON.parse(receivedMessage);
+
+        receivedMessage.should.have.property('timestamp');
+        let receivedTime = new Date(receivedMessage.timestamp);
+        let now = new Date();
+        assert(now >= receivedTime && now - receivedTime <= 1000);
+
+        receivedMessage.should.have.property(
+          'message',
+          'structured logging with tenant id',
+        );
+        receivedMessage.should.have.property('level', logFunctions[fIdx][1]);
+        receivedMessage.should.have.property('requestId', EXPECTED_ID);
+        receivedMessage.should.have.property('tenantId', EXPECTED_TENANT_ID);
+      }
+      LogPatch.setCurrentTenantId(undefined);
     });
 
     it('should filter messages correctly', () => {

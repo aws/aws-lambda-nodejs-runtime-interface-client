@@ -9,7 +9,7 @@
 'use strict';
 
 const assert = require('assert').strict;
-let { setCurrentRequestId } = require('./LogPatch');
+let { setCurrentRequestId, setCurrentTenantId } = require('./LogPatch');
 
 const INVOKE_HEADER = {
   ClientContext: 'lambda-runtime-client-context',
@@ -36,10 +36,18 @@ module.exports = class InvokeContext {
   }
 
   /**
+   * The tenantId for this request.
+   */
+  get tenantId() {
+    return this.headers[INVOKE_HEADER.TenantId];
+  }
+
+  /**
    * Push relevant invoke data into the logging context.
    */
   updateLoggingContext() {
     setCurrentRequestId(this.invokeId);
+    setCurrentTenantId(this.tenantId);
   }
 
   /**
