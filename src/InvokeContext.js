@@ -9,7 +9,7 @@
 'use strict';
 
 const assert = require('assert').strict;
-let { setCurrentRequestId } = require('./LogPatch');
+let { setCurrentRequestId, setCurrentTenantId } = require('./LogPatch');
 
 const INVOKE_HEADER = {
   ClientContext: 'lambda-runtime-client-context',
@@ -18,6 +18,7 @@ const INVOKE_HEADER = {
   AWSRequestId: 'lambda-runtime-aws-request-id',
   DeadlineMs: 'lambda-runtime-deadline-ms',
   XRayTrace: 'lambda-runtime-trace-id',
+  TenantId: 'lambda-runtime-aws-tenant-id',
 };
 
 module.exports = class InvokeContext {
@@ -35,10 +36,18 @@ module.exports = class InvokeContext {
   }
 
   /**
+   * The tenantId for this request.
+   */
+  get tenantId() {
+    return this.headers[INVOKE_HEADER.TenantId];
+  }
+
+  /**
    * Push relevant invoke data into the logging context.
    */
   updateLoggingContext() {
     setCurrentRequestId(this.invokeId);
+    setCurrentTenantId(this.tenantId);
   }
 
   /**
@@ -91,6 +100,7 @@ module.exports = class InvokeContext {
       ),
       invokedFunctionArn: this.headers[INVOKE_HEADER.ARN],
       awsRequestId: this.headers[INVOKE_HEADER.AWSRequestId],
+      tenantId: this.headers[INVOKE_HEADER.TenantId],
       getRemainingTimeInMillis: function () {
         return deadline - Date.now();
       },

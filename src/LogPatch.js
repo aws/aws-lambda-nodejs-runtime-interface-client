@@ -28,12 +28,22 @@ const jsonErrorReplacer = (_, value) => {
   return value;
 };
 
-function formatJsonMessage(requestId, timestamp, level, ...messageParams) {
+function formatJsonMessage(
+  requestId,
+  timestamp,
+  level,
+  tenantId,
+  ...messageParams
+) {
   let result = {
     timestamp: timestamp,
     level: level.name,
     requestId: requestId,
   };
+
+  if (tenantId != undefined && tenantId != null) {
+    result.tenantId = tenantId;
+  }
 
   if (messageParams.length === 1) {
     result.message = messageParams[0];
@@ -65,6 +75,13 @@ let _currentRequestId = {
   set: (id) => (global[REQUEST_ID_SYMBOL] = id),
 };
 
+/* Use a unique symbol to provide global access without risk of name clashes. */
+const TENANT_ID_SYMBOL = Symbol.for('aws.lambda.runtime.tenantId');
+let _currentTenantId = {
+  get: () => global[TENANT_ID_SYMBOL],
+  set: (id) => (global[TENANT_ID_SYMBOL] = id),
+};
+
 /**
  * Write logs to stdout.
  */
@@ -82,7 +99,15 @@ let logTextToStdout = (level, message, ...params) => {
 let logJsonToStdout = (level, message, ...params) => {
   let time = new Date().toISOString();
   let requestId = _currentRequestId.get();
-  let line = formatJsonMessage(requestId, time, level, message, ...params);
+  let tenantId = _currentTenantId.get();
+  let line = formatJsonMessage(
+    requestId,
+    time,
+    level,
+    tenantId,
+    message,
+    ...params,
+  );
   line = line.replace(/\n/g, '\r');
   process.stdout.write(line + '\n');
 };
@@ -125,10 +150,12 @@ let logJsonToFd = function (logTarget) {
     let date = new Date();
     let time = date.toISOString();
     let requestId = _currentRequestId.get();
+    let tenantId = _currentTenantId.get();
     let enrichedMessage = formatJsonMessage(
       requestId,
       time,
       level,
+      tenantId,
       message,
       ...params,
     );
@@ -239,6 +266,7 @@ let _patchConsole = () => {
 
 module.exports = {
   setCurrentRequestId: _currentRequestId.set,
+  setCurrentTenantId: _currentTenantId.set,
   patchConsole: _patchConsole,
   structuredConsole: structuredConsole,
 };

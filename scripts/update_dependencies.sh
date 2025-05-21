@@ -29,7 +29,8 @@ wget -c https://github.com/awslabs/aws-lambda-cpp/archive/refs/tags/v$AWS_LAMBDA
 # Apply patches
 (
   cd aws-lambda-cpp-$AWS_LAMBDA_CPP_RELEASE && \
-    patch -p1 < ../patches/aws-lambda-cpp-add-xray-response.patch
+    patch -p1 < ../patches/aws-lambda-cpp-add-xray-response.patch && \
+    patch -p1 < ../patches/aws-lambda-cpp-add-tenant-id.patch
 )
 
 # Pack again and remove the folder
