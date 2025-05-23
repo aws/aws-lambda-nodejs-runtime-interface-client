@@ -56,7 +56,7 @@
   },
   "dependencies": {
     "node-addon-api": "6.1.0",
-    "node-gyp": "9.4.0"
+    "node-gyp": "11.1.0"
   },
   "devDependencies": {
     "esbuild": "^0.25.3",
