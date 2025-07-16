@@ -12,7 +12,9 @@ const CallbackContext = require('./CallbackContext.js');
 const StreamingContext = require('./StreamingContext.js');
 const BeforeExitListener = require('./BeforeExitListener.js');
 const { STREAM_RESPONSE } = require('./UserFunction.js');
+const { NodeJsExit } = require('./Errors.js');
 const { verbose, vverbose } = require('./VerboseLog.js').logger('RAPID');
+const { structuredConsole } = require('./LogPatch');
 
 module.exports = class Runtime {
   constructor(client, handler, handlerMetadata, errorCallbacks) {
@@ -69,7 +71,7 @@ module.exports = class Runtime {
 
     try {
       this._setErrorCallbacks(invokeContext.invokeId);
-      this._setDefaultExitListener(invokeContext.invokeId, markCompleted);
+      this._setDefaultExitListener(invokeContext.invokeId, markCompleted, this.handlerMetadata.isAsync);
 
       let result = this.handler(
         JSON.parse(bodyJson),
@@ -178,12 +180,22 @@ module.exports = class Runtime {
    * called and the handler is not async.
    * CallbackContext replaces the listener if a callback is invoked.
    */
-  _setDefaultExitListener(invokeId, markCompleted) {
+  _setDefaultExitListener(invokeId, markCompleted, isAsync) {
     BeforeExitListener.set(() => {
       markCompleted();
-      this.client.postInvocationResponse(null, invokeId, () =>
-        this.scheduleIteration(),
-      );
+      // if the handle signature is async, we do want to fail the invocation
+      if (isAsync) {
+        const nodeJsExitError = new NodeJsExit();
+        structuredConsole.logError('Invoke Error', nodeJsExitError);
+        this.client.postInvocationError(nodeJsExitError, invokeId, () =>
+          this.scheduleIteration(),
+        );
+        // if the handler signature is sync, or use callback, we do want to send a successful invocation with a null payload if the customer forgot to call the callback
+      } else {
+        this.client.postInvocationResponse(null, invokeId, () =>
+          this.scheduleIteration(),
+        );
+      }
     });
   }
 
