@@ -172,6 +172,26 @@ When modifying dependencies (`package.json`), make sure to:
 
 We require package-lock.json to be checked in to ensure consistent installations across development environments.
 
+### Copyright Headers
+All source files in the bin, scripts, src, and test folders must include a copyright header containing both the words "Copyright" and "Amazon.com". The standard header format is:
+
+```
+/*
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+SPDX-License-Identifier: Apache-2.0
+*/
+```
+
+To check if your files have proper headers:
+```shell script
+npm run check-headers
+```
+
+To automatically add headers to files missing them:
+```shell script
+npm run add-headers
+```
+
 ### Troubleshooting
 
 While running integration tests, you might encounter the Docker Hub rate limit error with the following body:

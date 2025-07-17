@@ -1,4 +1,8 @@
 #!/bin/bash
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+#!/bin/bash
 # This file is copied from https://github.com/aws/aws-codebuild-docker-images/blob/f0912e4b16e427da35351fc102f0f56f4ceb938a/local_builds/codebuild_build.sh
 
 function allOSRealPath() {
