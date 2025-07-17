@@ -3,9 +3,20 @@ name: Build and Release
 on:
   push:
     branches: [ fabisev/artifact-publishing ]
-    tags: [ 'v*' ]
+    tags: [ 'v*', 'rc-*' ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Test mode (release, rc, or none)'
+        required: true
+        default: 'none'
+        type: choice
+        options:
+          - none
+          - release
+          - rc
 
 jobs:
   lint:
@@ -88,11 +99,9 @@ jobs:
       run: |
         docker build -f test/unit/Dockerfile.nodejs${{ matrix.node-version }}.x -t unit/nodejs.${{ matrix.node-version }}x .
         docker run --rm unit/nodejs.${{ matrix.node-version }}x
-    
-
 
   publish:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     needs: [build, test]
     permissions:
@@ -114,10 +123,31 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        registry-url: 'https://registry.npmjs.org'
     
+    # Handle release candidate version if needed
+    - name: Determine version
+      id: version
+      run: |
+        if [[ "${{ github.ref }}" == refs/tags/rc-* ]]; then
+          RC_NUMBER=${GITHUB_REF#refs/tags/rc-}
+          PACKAGE_VERSION="${{ needs.build.outputs.version }}-rc.${RC_NUMBER}"
+          echo "package_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+          echo "is_rc=true" >> $GITHUB_OUTPUT
+          # Update package.json version to include RC suffix
+          npm version $PACKAGE_VERSION --no-git-tag-version
+        else
+          echo "package_version=${{ needs.build.outputs.version }}" >> $GITHUB_OUTPUT
+          echo "is_rc=false" >> $GITHUB_OUTPUT
+        fi
+    
+    # Commented out npm publishing until token is available
     # - name: Publish to npm
-    #   run: npm publish aws-lambda-ric-*.tgz
+    #   run: |
+    #     if [[ "${{ steps.version.outputs.is_rc }}" == "true" ]]; then
+    #       npm publish aws-lambda-ric-*.tgz --tag rc
+    #     else
+    #       npm publish aws-lambda-ric-*.tgz
+    #     fi
     #   env:
     #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     
@@ -129,4 +159,50 @@ jobs:
           checksums.sha256
           checksums.sha512
           checksums.txt
+        prerelease: ${{ steps.version.outputs.is_rc }}
+        name: ${{ steps.version.outputs.is_rc == 'true' && format('Release Candidate {0}', steps.version.outputs.package_version) || '' }}
         generate_release_notes: true
+        
+  test-publish:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.test_mode != 'none'
+    runs-on: ubuntu-latest
+    needs: [build, test]
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: package-${{ needs.build.outputs.version }}
+    
+    - name: Verify checksums
+      run: |
+        sha256sum -c checksums.sha256
+        sha512sum -c checksums.sha512
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
+    - name: Test Release Publishing
+      if: github.event.inputs.test_mode == 'release'
+      run: |
+        echo "=== TESTING RELEASE PUBLISHING (DRY RUN) ==="
+        echo "Would create a GitHub release with the following files:"
+        ls -la aws-lambda-ric-*.tgz checksums.*
+        echo "\nRelease would include version: ${{ needs.build.outputs.version }}"
+    
+    - name: Test RC Publishing
+      if: github.event.inputs.test_mode == 'rc'
+      run: |
+        echo "=== TESTING RC PUBLISHING (DRY RUN) ==="
+        # Simulate RC version
+        RC_NUMBER="1"
+        PACKAGE_VERSION="${{ needs.build.outputs.version }}-rc.${RC_NUMBER}"
+        echo "Would create a GitHub pre-release with the following files:"
+        ls -la aws-lambda-ric-*.tgz checksums.*
+        echo "\nRelease would include version: ${PACKAGE_VERSION}"
+        
+        # Update version for display purposes
+        npm version ${PACKAGE_VERSION} --no-git-tag-version
