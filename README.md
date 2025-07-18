@@ -173,16 +173,16 @@ When modifying dependencies (`package.json`), make sure to:
 We require package-lock.json to be checked in to ensure consistent installations across development environments.
 
 ### Changelog Generation
-This project includes an automated changelog generator that creates a list of commits between tags when a new release is created. The changelog is automatically included in GitHub release notes.
+This project maintains a changelog in `RELEASE.CHANGELOG.md`. The changelog is automatically updated when a new tag is created.
 
-To manually generate a changelog:
+To manually generate a changelog entry for testing or preview purposes, run:
 ```shell script
 npm run changelog
 ```
 
-You can also specify custom options:
+To manually update the RELEASE.CHANGELOG.md file with a new entry:
 ```shell script
-npm run changelog -- --start-ref v1.0.0 --end-ref HEAD --output CHANGELOG.md
+npm run changelog -- --update
 ```
 
 ### Copyright Headers
