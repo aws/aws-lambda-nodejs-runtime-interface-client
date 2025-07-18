@@ -172,6 +172,19 @@ When modifying dependencies (`package.json`), make sure to:
 
 We require package-lock.json to be checked in to ensure consistent installations across development environments.
 
+### Changelog Generation
+This project includes an automated changelog generator that creates a list of commits between tags when a new release is created. The changelog is automatically included in GitHub release notes.
+
+To manually generate a changelog:
+```shell script
+npm run changelog
+```
+
+You can also specify custom options:
+```shell script
+npm run changelog -- --start-ref v1.0.0 --end-ref HEAD --output CHANGELOG.md
+```
+
 ### Copyright Headers
 All source files in the bin, scripts, src, and test folders must include a copyright header containing both the words "Copyright" and "Amazon.com". The standard header format is:
 

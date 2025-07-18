@@ -7,6 +7,7 @@
   "gypfile": true,
   "scripts": {
     "archive": "npx rimraf aws-lambda-ric-*.tgz && npm install && npm run build && npm pack",
+    "changelog": "node ./scripts/generate-changelog.js",
     "clean": "npx rimraf build node_modules package-lock.json",
     "copy-files": "mkdir -p dist && cp src/types/* dist/",
     "update-deps": "./scripts/update_dependencies.sh",

@@ -152,6 +152,12 @@ jobs:
     #   env:
     #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     
+    - name: Generate Changelog
+      run: |
+        node scripts/generate-changelog.js --output changelog.md
+        echo "Generated changelog:"
+        cat changelog.md
+
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
@@ -162,7 +168,7 @@ jobs:
           checksums.txt
         prerelease: ${{ steps.version.outputs.is_rc }}
         name: ${{ steps.version.outputs.is_rc == 'true' && format('Release Candidate {0}', steps.version.outputs.package_version) || '' }}
-        generate_release_notes: true
+        body_path: changelog.md
         
   test-publish:
     if: (github.event_name == 'workflow_dispatch' && github.event.inputs.test_mode != 'none') || github.ref == 'refs/heads/fabisev/artifact-publishing'
