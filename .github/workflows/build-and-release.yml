@@ -67,8 +67,7 @@ jobs:
     
     - name: Install build dependencies
       run: |
-        apt-get update
-        apt-get install -y cmake make g++
+        yum install -y cmake make gcc-c++
         
     - name: Install and build
       run: |
