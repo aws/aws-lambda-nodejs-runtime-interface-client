@@ -69,6 +69,10 @@ jobs:
       run: |
         yum install -y cmake make gcc-c++
         
+    - name: Clean build directories
+      run: |
+        rm -rf deps/*/build
+        
     - name: Install and build
       run: |
         npm ci
