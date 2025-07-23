@@ -65,6 +65,11 @@ jobs:
           build/
         key: native-deps-${{ runner.os }}-${{ hashFiles('deps/versions', 'binding.gyp') }}
     
+    - name: Install build dependencies
+      run: |
+        apt-get update
+        apt-get install -y cmake make g++
+        
     - name: Install and build
       run: |
         npm ci
