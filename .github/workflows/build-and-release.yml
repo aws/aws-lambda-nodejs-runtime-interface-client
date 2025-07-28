@@ -216,24 +216,51 @@ jobs:
       with:
         node-version: '20'
     
+    - name: Get NPM token from AWS Secrets Manager
+      run: |
+        NPM_TOKEN=$(aws secretsmanager get-secret-value --secret-id NPM-TOKEN --region eu-north-1 --query SecretString --output text | jq -r .token)
+        echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+        echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
+        echo "Authenticated as: $(npm whoami)"
+    
     - name: Test Release Publishing
       if: github.event.inputs.test_mode == 'release' || github.ref == 'refs/heads/fabisev/artifact-publishing'
       run: |
-        echo "=== TESTING RELEASE PUBLISHING (DRY RUN) ==="
-        echo "Would create a GitHub release with the following files:"
-        ls -la aws-lambda-ric-*.tgz checksums.*
-        echo "\nRelease would include version: ${{ needs.build.outputs.version }}"
+        echo "=== TESTING RELEASE PUBLISHING ==="
+        # Extract and modify package for testing
+        tar -xzf aws-lambda-ric-*.tgz
+        cd package
+        
+        PACKAGE_NAME="icecream-shop"
+        npm pkg set name="${PACKAGE_NAME}"
+        
+        echo "Package name: ${PACKAGE_NAME}"
+        echo "Publishing to npm with version: ${{ needs.build.outputs.version }}"
+        
+        if ! npm publish --access public; then
+          echo "❌ Publish failed, showing debug logs:"
+          echo "=== NPM DEBUG LOG ==="
+          find /root/.npm/_logs -name "*debug*.log" -exec cat {} \; 2>/dev/null || echo "No debug logs found"
+          echo "=== END DEBUG LOG ==="
+          exit 1
+        fi
+        
+        echo "✅ Successfully published test package to npm!"
     
     - name: Test RC Publishing
       if: github.event.inputs.test_mode == 'rc'
       run: |
-        echo "=== TESTING RC PUBLISHING (DRY RUN) ==="
+        echo "=== TESTING RC PUBLISHING ==="
+        # Extract and modify package for testing
+        tar -xzf aws-lambda-ric-*.tgz
+        cd package
+        PACKAGE_NAME="icecream-shop"
+        npm pkg set name=PACKAGE_NAME
         # Simulate RC version
         RC_NUMBER="1"
         PACKAGE_VERSION="${{ needs.build.outputs.version }}-rc.${RC_NUMBER}"
-        echo "Would create a GitHub pre-release with the following files:"
-        ls -la aws-lambda-ric-*.tgz checksums.*
-        echo "\nRelease would include version: ${PACKAGE_VERSION}"
-        
-        # Update version for display purposes
+        echo "Publishing RC to npm with version: ${PACKAGE_VERSION}"
+        # Update version for RC
         npm version ${PACKAGE_VERSION} --no-git-tag-version
+        npm publish --tag rc --access public
+        echo "✅ Successfully published RC test package to npm!"
