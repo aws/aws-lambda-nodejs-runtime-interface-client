@@ -37,7 +37,7 @@ jobs:
 
   build:
     runs-on:
-      - codebuild-fabisev-nodejs-test-${{ github.run_id }}-${{ github.run_attempt }}
+      - codebuild-awsaws-lambda-nodejs-runtime-interface-client-${{ github.run_id }}-${{ github.run_attempt }}
     # Removed dependency on lint job
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -98,7 +98,7 @@ jobs:
 
   test:
     runs-on:
-      - codebuild-fabisev-nodejs-test-${{ github.run_id }}-${{ github.run_attempt }}
+      - codebuild-awsaws-lambda-nodejs-runtime-interface-client-${{ github.run_id }}-${{ github.run_attempt }}
     needs: [build]
     strategy:
       matrix:
@@ -114,7 +114,7 @@ jobs:
   publish:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on:
-      - codebuild-fabisev-nodejs-test-${{ github.run_id }}-${{ github.run_attempt }}
+      - codebuild-awsaws-lambda-nodejs-runtime-interface-client-${{ github.run_id }}-${{ github.run_attempt }}
     needs: [build, test]
     permissions:
       contents: write
@@ -196,7 +196,7 @@ jobs:
   test-publish:
     if: (github.event_name == 'workflow_dispatch' && github.event.inputs.test_mode != 'none') || github.ref == 'refs/heads/fabisev/artifact-publishing'
     runs-on:
-      - codebuild-fabisev-nodejs-test-${{ github.run_id }}-${{ github.run_attempt }}
+      - codebuild-awsaws-lambda-nodejs-runtime-interface-client-${{ github.run_id }}-${{ github.run_attempt }}
     needs: [build, test]
     steps:
     - uses: actions/checkout@v4
@@ -218,7 +218,7 @@ jobs:
     
     - name: Get NPM token from AWS Secrets Manager
       run: |
-        NPM_TOKEN=$(aws secretsmanager get-secret-value --secret-id NPM-TOKEN --region eu-north-1 --query SecretString --output text | jq -r .token)
+        NPM_TOKEN=$(aws secretsmanager get-secret-value --secret-id aws-lambda-runtimes/github/nodejs/npm-token --query SecretString --output text | jq -r .token)
         echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
         echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
         echo "Authenticated as: $(npm whoami)"
