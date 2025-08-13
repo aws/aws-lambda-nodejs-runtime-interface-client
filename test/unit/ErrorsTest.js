@@ -1,6 +1,4 @@
-/**
- * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- */
+/** Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved. */
 
 'use strict';
 
@@ -22,11 +20,22 @@ describe('Formatted Error Logging', () => {
 
 describe('Invalid chars in HTTP header', () => {
   it('should be replaced', () => {
-    let errorWithInvalidChar = new Error('\x7F \x7F');
+    let errorWithInvalidChar = new Error('\x7F');
     errorWithInvalidChar.name = 'ErrorWithInvalidChar';
 
     let loggedError = Errors.toRapidResponse(errorWithInvalidChar);
     loggedError.should.have.property('errorType', 'ErrorWithInvalidChar');
-    loggedError.should.have.property('errorMessage', '%7F %7F');
+    loggedError.should.have.property('errorMessage', '%7F');
+  });
+});
+
+describe('NodeJsExit error ctor', () => {
+  it('should be have a fixed reason', () => {
+    let nodeJsExit = new Errors.NodeJsExit();
+    let loggedError = Errors.toRapidResponse(nodeJsExit);
+    loggedError.should.have.property('errorType', 'Runtime.NodeJsExit');
+    loggedError.errorMessage.should.containEql(
+      'runtime client detected an unexpected Node.js',
+    );
   });
 });

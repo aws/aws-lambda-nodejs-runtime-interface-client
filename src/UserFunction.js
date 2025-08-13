@@ -311,10 +311,25 @@ module.exports.isHandlerFunction = function (value) {
   return typeof value === 'function';
 };
 
+function _isAsync(handler) {
+  try {
+    return (
+      handler &&
+      typeof handler === 'function' &&
+      handler.constructor &&
+      handler.constructor.name === 'AsyncFunction'
+    );
+  } catch (error) {
+    return false;
+  }
+}
+
 module.exports.getHandlerMetadata = function (handlerFunc) {
   return {
     streaming: _isHandlerStreaming(handlerFunc),
     highWaterMark: _highWaterMark(handlerFunc),
+    isAsync: _isAsync(handlerFunc),
+    argsNum: handlerFunc.length,
   };
 };
 
