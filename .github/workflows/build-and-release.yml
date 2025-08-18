@@ -16,6 +16,14 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
+    - name: Debug runner info
+      run: |
+        echo "Runner started successfully"
+        whoami
+        pwd
+        uname -a
+        cat /etc/os-release || echo "No os-release file"
+    
     - uses: actions/checkout@v4
     
     - name: Setup Node.js
@@ -39,7 +47,10 @@ jobs:
         key: native-deps-${{ runner.os }}-${{ hashFiles('deps/versions', 'binding.gyp') }}
     
     - name: Install build dependencies
-      run: yum install -y cmake make gcc-c++
+      run: |
+        echo "Installing build dependencies..."
+        yum install -y cmake make gcc-c++
+        echo "Build dependencies installed"
         
     - name: Clean build directories
       run: rm -rf deps/*/build
