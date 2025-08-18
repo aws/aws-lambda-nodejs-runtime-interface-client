@@ -12,6 +12,7 @@ jobs:
   build:
     runs-on:
       - project-awsaws-lambda-nodejs-runtime-interface-client
+    timeout-minutes: 15
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
@@ -43,11 +44,23 @@ jobs:
     - name: Clean build directories
       run: rm -rf deps/*/build
         
-    - name: Install and build
+    - name: Install dependencies
       run: |
-        npm ci
+        echo "Starting npm ci..."
+        npm ci --verbose
+        echo "npm ci completed"
+    
+    - name: Build project
+      run: |
+        echo "Starting npm run build..."
         npm run build
+        echo "Build completed"
+    
+    - name: Pack project
+      run: |
+        echo "Starting npm pack..."
         npm pack
+        echo "Pack completed"
     
     - name: Generate checksums
       run: |
