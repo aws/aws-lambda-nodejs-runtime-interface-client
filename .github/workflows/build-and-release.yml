@@ -2,7 +2,7 @@ name: Build and Release
 
 on:
   push:
-    branches: [ fabisev/artifact-publishing ]
+    branches: [ main ]
     tags: [ 'v*', 'rc-*' ]
   pull_request:
     branches: [ main ]
@@ -77,7 +77,7 @@ jobs:
         docker run --rm unit/nodejs.${{ matrix.node-version }}x
 
   publish:
-    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/fabisev/artifact-publishing'
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: codebuild-project-awsaws-lambda-nodejs-runtime-interface-client-${{ github.run_id }}-${{ github.run_attempt }}
     needs: [build, test]
     permissions:
@@ -103,13 +103,7 @@ jobs:
     - name: Determine version and package name
       id: version
       run: |
-        npm pkg set name="icecream-shop"
-        if [[ "${{ github.ref }}" == refs/heads/fabisev/artifact-publishing ]]; then
-          PACKAGE_VERSION="${{ needs.build.outputs.version }}-test.$(date +%s)"
-          echo "package_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
-          echo "is_test=true" >> $GITHUB_OUTPUT
-          npm version $PACKAGE_VERSION --no-git-tag-version
-        elif [[ "${{ github.ref }}" == refs/tags/rc-* ]]; then
+        if [[ "${{ github.ref }}" == refs/tags/rc-* ]]; then
           RC_NUMBER=${GITHUB_REF#refs/tags/rc-}
           PACKAGE_VERSION="${{ needs.build.outputs.version }}-rc.${RC_NUMBER}"
           echo "package_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
@@ -123,12 +117,10 @@ jobs:
     
     - name: Publish to npm
       run: |
-        if [[ "${{ steps.version.outputs.is_test }}" == "true" ]]; then
-          npm publish icecream-shop-*.tgz --tag test
-        elif [[ "${{ steps.version.outputs.is_rc }}" == "true" ]]; then
-          npm publish icecream-shop-*.tgz --tag rc
+        if [[ "${{ steps.version.outputs.is_rc }}" == "true" ]]; then
+          npm publish aws-lambda-ric-*.tgz --tag rc
         else
-          npm publish icecream-shop-*.tgz
+          npm publish aws-lambda-ric-*.tgz
         fi
     
     - name: Create GitHub Release
