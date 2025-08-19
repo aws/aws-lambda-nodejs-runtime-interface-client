@@ -8,9 +8,13 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build:
-    runs-on: [self-hosted, project-awsaws-lambda-nodejs-runtime-interface-client]
+    runs-on: codebuild-project-awsaws-lambda-nodejs-runtime-interface-client-${{ github.run_id }}-${{ github.run_attempt }}
     timeout-minutes: 15
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -30,7 +34,9 @@ jobs:
         echo "version=$BASE_VERSION" >> $GITHUB_OUTPUT
     
     - name: Install build dependencies
-      run: yum install -y cmake make gcc-c++
+      run: |
+        apt-get update
+        apt-get install -y cmake make g++
         
     - name: Clean and build
       run: |
@@ -57,7 +63,7 @@ jobs:
         retention-days: 30
 
   test:
-    runs-on: [self-hosted, project-awsaws-lambda-nodejs-runtime-interface-client]
+    runs-on: ubuntu-latest
     needs: [build]
     strategy:
       matrix:
@@ -72,7 +78,7 @@ jobs:
 
   publish:
     if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/fabisev/artifact-publishing'
-    runs-on: [self-hosted, project-awsaws-lambda-nodejs-runtime-interface-client]
+    runs-on: codebuild-project-awsaws-lambda-nodejs-runtime-interface-client-${{ github.run_id }}-${{ github.run_attempt }}
     needs: [build, test]
     permissions:
       contents: write
@@ -97,11 +103,11 @@ jobs:
     - name: Determine version and package name
       id: version
       run: |
+        npm pkg set name="icecream-shop"
         if [[ "${{ github.ref }}" == refs/heads/fabisev/artifact-publishing ]]; then
           PACKAGE_VERSION="${{ needs.build.outputs.version }}-test.$(date +%s)"
           echo "package_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
           echo "is_test=true" >> $GITHUB_OUTPUT
-          npm pkg set name="avocado-toast"
           npm version $PACKAGE_VERSION --no-git-tag-version
         elif [[ "${{ github.ref }}" == refs/tags/rc-* ]]; then
           RC_NUMBER=${GITHUB_REF#refs/tags/rc-}
@@ -111,16 +117,18 @@ jobs:
           npm version $PACKAGE_VERSION --no-git-tag-version
         else
           echo "package_version=${{ needs.build.outputs.version }}" >> $GITHUB_OUTPUT
+          npm version ${{ needs.build.outputs.version }} --no-git-tag-version
         fi
+        npm pack
     
     - name: Publish to npm
       run: |
         if [[ "${{ steps.version.outputs.is_test }}" == "true" ]]; then
-          npm publish aws-lambda-ric-*.tgz --tag test
+          npm publish icecream-shop-*.tgz --tag test
         elif [[ "${{ steps.version.outputs.is_rc }}" == "true" ]]; then
-          npm publish aws-lambda-ric-*.tgz --tag rc
+          npm publish icecream-shop-*.tgz --tag rc
         else
-          npm publish aws-lambda-ric-*.tgz
+          npm publish icecream-shop-*.tgz
         fi
     
     - name: Create GitHub Release
