@@ -2,9 +2,24 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-set -e
+set -euo pipefail
+trap 'echo "Error on line $LINENO"; exit 1' ERR
 
 echo "Running local unit tests for AWS Lambda NodeJS RIC"
+
+# Check if Docker is available
+if ! command -v docker &> /dev/null; then
+    echo "Error: Docker is not installed or not in PATH"
+    echo "Please install Docker Desktop: https://www.docker.com/products/docker-desktop/"
+    exit 1
+fi
+
+# Check if Docker daemon is running
+if ! docker info &> /dev/null; then
+    echo "Error: Docker daemon is not running"
+    echo "Please start Docker Desktop and wait for it to initialize"
+    exit 1
+fi
 
 # Function to run unit tests for specific Node version
 run_unit_tests() {
