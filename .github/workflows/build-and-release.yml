@@ -98,7 +98,8 @@ jobs:
     - name: Setup NPM authentication
       run: |
         NPM_TOKEN=$(aws secretsmanager get-secret-value --secret-id aws-lambda-runtimes/github/nodejs/npm-token --query SecretString --output text)
-        echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+        echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+        chmod 0600 .npmrc
     
     - name: Determine version and package name
       id: version
@@ -117,10 +118,11 @@ jobs:
     
     - name: Publish to npm
       run: |
+        PACKAGE_FILE=$(ls aws-lambda-ric-*.tgz)
         if [[ "${{ steps.version.outputs.is_rc }}" == "true" ]]; then
-          npm publish aws-lambda-ric-*.tgz --tag rc
+          npm publish $PACKAGE_FILE --tag rc --access=public
         else
-          npm publish aws-lambda-ric-*.tgz
+          npm publish $PACKAGE_FILE --access=public
         fi
     
     - name: Create GitHub Release
