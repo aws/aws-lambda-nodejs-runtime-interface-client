@@ -4,45 +4,23 @@
 
 set -e
 
-# Create patch file
-patch_file=$(mktemp)
-trap "rm -f $patch_file" EXIT
+script_dir="$(dirname "$0")"
+files_modified=0
 
-# Generate patch for missing headers
-files_count=0
-git ls-files 'bin/**' 'scripts/**' 'src/**' 'test/**' | \
-  grep -E '\.(js|ts|mjs|mts|jsx|tsx|c|cpp|h|sh)$' | \
-  while read file; do
-    if ! grep -q 'Copyright.*Amazon\.com' "$file"; then
-      files_count=$((files_count + 1))
-      
-      if [[ "$file" == *.sh ]]; then
-        header="#!/bin/bash\n# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.\n# SPDX-License-Identifier: Apache-2.0\n\n"
-      else
-        header="/*\nCopyright Amazon.com, Inc. or its affiliates. All Rights Reserved.\nSPDX-License-Identifier: Apache-2.0\n*/\n\n"
-      fi
-      
-      # Get first line for context
-      first_line=$(head -n1 "$file" 2>/dev/null || echo "")
-      
-      # Create patch entry
-      echo "--- a/$file" >> "$patch_file"
-      echo "+++ b/$file" >> "$patch_file"
-      echo "@@ -1,1 +1,$(echo -e "$header" | wc -l) @@" >> "$patch_file"
-      echo -e "$header" | sed 's/^/+/' >> "$patch_file"
-      if [ -n "$first_line" ]; then
-        echo " $first_line" >> "$patch_file"
-      fi
+while IFS= read -r file; do
+  if ! grep -q 'Copyright.*Amazon\.com' "$file"; then
+    if [[ "$file" == *.sh ]]; then
+      sed "s|PLACEHOLDER|$file|" "$script_dir/patches/sh-files.patch" | git apply
+    else
+      sed "s|PLACEHOLDER|$file|" "$script_dir/patches/js-files.patch" | git apply
     fi
-  done
+    files_modified=$((files_modified + 1))
+  fi
+done < <(git ls-files 'bin/**' 'scripts/**' 'src/**' 'test/**' | grep -E '\.(js|ts|mjs|mts|jsx|tsx|c|cpp|h|sh)$')
 
-if [ ! -s "$patch_file" ]; then
+if [ "$files_modified" -eq 0 ]; then
   echo "✓ All files already have copyright headers"
-  exit 0
+else
+  echo "✓ Copyright headers added to $files_modified files"
+  echo "Run 'git diff' to review changes"
 fi
-
-echo "Applying copyright header patch..."
-git apply "$patch_file"
-
-echo "✓ Copyright headers added successfully"
-echo "Run 'git diff --cached' or 'git diff' to review changes"
