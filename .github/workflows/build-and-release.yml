@@ -52,8 +52,29 @@ jobs:
     - name: Build natively for $(arch)
       run: |
         echo "Building for architecture: $(arch)"
+        CURRENT_ARCH=$(arch)
+        
+        # Build native dependencies and JavaScript
         BUILD=1 npm install
         npm run build
+        
+        # Verify native binary was built
+        if [ ! -f "build/Release/rapid-client.node" ]; then
+          echo "Error: Native binary not found at build/Release/rapid-client.node"
+          exit 1
+        fi
+        
+        # Copy native binary to dist directory
+        mkdir -p dist
+        cp build/Release/rapid-client.node dist/
+        
+        # Create architecture-specific package name
+        node -e "
+          const pkg = require('./package.json');
+          pkg.name = 'aws-lambda-ric-' + process.env.CURRENT_ARCH;
+          require('fs').writeFileSync('./package.json', JSON.stringify(pkg, null, 2));
+        " CURRENT_ARCH=$CURRENT_ARCH
+        
         npm pack
     
     - name: Generate checksums
@@ -141,9 +162,10 @@ jobs:
           TAG_FLAG=""
         fi
         
-        # Publish both architecture packages
+        # Publish architecture-specific packages
         for arch in x86_64 aarch64; do
           PACKAGE_FILE=$(ls ./artifacts/$arch/aws-lambda-ric-*.tgz)
+          echo "Publishing $PACKAGE_FILE for architecture $arch"
           npm publish $PACKAGE_FILE $TAG_FLAG --access=public
         done
     
