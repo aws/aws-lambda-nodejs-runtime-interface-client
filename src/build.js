@@ -28,22 +28,29 @@ const buildOneSet = (target) => {
     target,
   });
 
-  // Keep backward compatibility for Node14
-  if (process.version.startsWith('v14')) {
-    build({
-      ...shared,
-      format: 'cjs',
-      entryPoints: ['UserFunction.js'],
-      banner: {
-        js: '(function (){',
-      },
-      footer: {
-        js: '})();',
-      },
-      outfile: `../dist/UserFunction.js`,
-      target,
-    });
-  }
+  // Always build UserFunction.js
+  build({
+    ...shared,
+    format: 'cjs',
+    entryPoints: ['UserFunction.js'],
+    banner: {
+      js: '(function (){',
+    },
+    footer: {
+      js: '})();',
+    },
+    outfile: `../dist/UserFunction.js`,
+    target,
+  });
+
+  // Copy rapid-client
+  fs.mkdirSync(`../dist`, {
+    recursive: true,
+  });
+  fs.copyFileSync(
+    '../build/Release/rapid-client.node',
+    `../dist/rapid-client.node`,
+  );
 };
 
-buildOneSet('node14.21.3');
+buildOneSet('node16.20.2');

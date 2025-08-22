@@ -49,49 +49,45 @@ jobs:
         apt-get update
         apt-get install -y cmake make g++ autotools-dev automake libtool
     
-    - name: Build natively for $(arch)
+    - name: Build natively for ${{ matrix.arch }}
       run: |
-        echo "Building for architecture: $(arch)"
-        CURRENT_ARCH=$(arch)
+        echo "Building for architecture: ${{ matrix.arch }}"
         
-        # Build native dependencies and JavaScript
+        # Build native dependencies and JavaScript 
         BUILD=1 npm install
         npm run build
         
-        # Verify native binary was built
-        if [ ! -f "build/Release/rapid-client.node" ]; then
-          echo "Error: Native binary not found at build/Release/rapid-client.node"
+        # Verify required files were created
+        if [ ! -f "dist/rapid-client.node" ] || [ ! -f "dist/index.mjs" ] || [ ! -f "dist/UserFunction.js" ]; then
+          echo "Error: Required files not found in dist directory"
           exit 1
         fi
         
-        # Copy native binary to dist directory
-        mkdir -p dist
-        cp build/Release/rapid-client.node dist/
-        
-        # Create architecture-specific package name
+        # Copy architecture-specific package.json to dist
         node -e "
           const pkg = require('./package.json');
-          pkg.name = 'aws-lambda-ric-' + process.env.CURRENT_ARCH;
-          require('fs').writeFileSync('./package.json', JSON.stringify(pkg, null, 2));
-        " CURRENT_ARCH=$CURRENT_ARCH
+          pkg.name = 'aws-lambda-ric-${{ matrix.arch }}';
+          require('fs').writeFileSync('./dist/package.json', JSON.stringify(pkg, null, 2));
+        "
         
-        npm pack
+        # Create tarball with only required files
+        tar -czf aws-lambda-ric-${{ matrix.arch }}-${{ needs.get-version.outputs.version }}.tgz \
+          -C dist package.json index.mjs UserFunction.js rapid-client.node
     
     - name: Generate checksums
       run: |
-        PACKAGE_FILE=$(ls aws-lambda-ric-*.tgz)
-        CURRENT_ARCH=$(arch)
-        sha256sum $PACKAGE_FILE > checksums-$CURRENT_ARCH.sha256
-        sha512sum $PACKAGE_FILE > checksums-$CURRENT_ARCH.sha512
-        echo "Package: $PACKAGE_FILE ($CURRENT_ARCH) with version: ${{ needs.get-version.outputs.version }}" > checksums-$CURRENT_ARCH.txt
+        PACKAGE_FILE="aws-lambda-ric-${{ matrix.arch }}-${{ needs.get-version.outputs.version }}.tgz"
+        sha256sum $PACKAGE_FILE > checksums-${{ matrix.arch }}.sha256
+        sha512sum $PACKAGE_FILE > checksums-${{ matrix.arch }}.sha512
+        echo "Package: $PACKAGE_FILE (${{ matrix.arch }}) with version: ${{ needs.get-version.outputs.version }}" > checksums-${{ matrix.arch }}.txt
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: package-${{ matrix.arch }}-${{ needs.get-version.outputs.version }}
         path: |
-          aws-lambda-ric-*.tgz
-          checksums-*.*
+          aws-lambda-ric-*-${{ needs.get-version.outputs.version }}.tgz
+          checksums-*
         retention-days: 30
 
   test:
@@ -162,12 +158,10 @@ jobs:
           TAG_FLAG=""
         fi
         
-        # Publish architecture-specific packages
-        for arch in x86_64 aarch64; do
-          PACKAGE_FILE=$(ls ./artifacts/$arch/aws-lambda-ric-*.tgz)
-          echo "Publishing $PACKAGE_FILE for architecture $arch"
-          npm publish $PACKAGE_FILE $TAG_FLAG --access=public
-        done
+        # Build and publish full package to npm
+        BUILD=1 npm install
+        npm run build
+        npm publish $TAG_FLAG --access=public
     
     - name: Combine checksums
       run: |
@@ -180,6 +174,6 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          ./artifacts/*/aws-lambda-ric-*.tgz
+          ./artifacts/*/aws-lambda-ric-*-*.tgz
           combined-checksums.*
         prerelease: ${{ steps.version.outputs.is_rc }}
