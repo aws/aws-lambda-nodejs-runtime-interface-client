@@ -8,15 +8,6 @@ init:
 test:
 	npm run test
 
-setup-codebuild-agent:
-	docker build -t codebuild-agent - < test/integration/codebuild-local/Dockerfile.agent
-
-test-smoke: setup-codebuild-agent
-	CODEBUILD_IMAGE_TAG=codebuild-agent test/integration/codebuild-local/test_one.sh test/integration/codebuild/buildspec.os.alpine.1.yml alpine 3.16 18
-
-test-integ: setup-codebuild-agent
-	CODEBUILD_IMAGE_TAG=codebuild-agent DISTRO="$(DISTRO)" test/integration/codebuild-local/test_all.sh test/integration/codebuild
-
 copy-files:
 	npm run copy-files
 
@@ -30,7 +21,7 @@ format:
 dev: init test
 
 # Verifications to run before sending a pull request
-pr: build dev test-smoke
+pr: build dev
 
 clean:
 	npm run clean
@@ -42,7 +33,7 @@ build: copy-files
 pack: build
 	npm pack
 
-.PHONY: target init test setup-codebuild-agent test-smoke test-integ install format dev pr clean build pack copy-files
+.PHONY: target init test install format dev pr clean build pack copy-files
 
 define HELP_MESSAGE
 

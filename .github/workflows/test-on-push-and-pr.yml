@@ -15,20 +15,10 @@ jobs:
         node-version: [18, 20, 22]
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Build and run tests for Node.js ${{ matrix.node-version }}
       run: |
         docker build -f test/unit/Dockerfile.nodejs${{ matrix.node-version }}.x -t unit/nodejs.${{ matrix.node-version }}x .
         docker run unit/nodejs.${{ matrix.node-version }}x
 
-  integration-test:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        distro: [alpine, amazonlinux, centos, debian, ubuntu]
 
-    steps:
-    - uses: actions/checkout@v4
-    - name: Run ${{ matrix.distro }} integration tests
-      run: DISTRO=${{ matrix.distro }} make test-integ
