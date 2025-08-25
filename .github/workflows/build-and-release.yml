@@ -1,0 +1,179 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*', 'rc-*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  get-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Get version
+      id: version
+      run: |
+        BASE_VERSION=$(node -p "require('./package.json').version")
+        echo "version=$BASE_VERSION" >> $GITHUB_OUTPUT
+
+  build:
+    needs: [get-version]
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            runner: codebuild-project-awsaws-lambda-nodejs-runtime-interface-client-${{ github.run_id }}-${{ github.run_attempt }}
+          - arch: aarch64
+            runner: codebuild-project-awsaws-lambda-nodejs-runtime-interface-client-${{ github.run_id }}-${{ github.run_attempt }}
+    runs-on: ${{ matrix.runner }}
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
+    - name: Install build dependencies
+      run: |
+        apt-get update
+        apt-get install -y cmake make g++ autotools-dev automake libtool
+    
+    - name: Build natively for ${{ matrix.arch }}
+      run: |
+        echo "Building for architecture: ${{ matrix.arch }}"
+        
+        # Build native dependencies and JavaScript 
+        BUILD=1 npm install
+        npm run build
+        
+        # Verify required files were created
+        if [ ! -f "dist/rapid-client.node" ] || [ ! -f "dist/index.mjs" ] || [ ! -f "dist/UserFunction.js" ]; then
+          echo "Error: Required files not found in dist directory"
+          exit 1
+        fi
+        
+        # Copy architecture-specific package.json to dist
+        node -e "
+          const pkg = require('./package.json');
+          pkg.name = 'aws-lambda-ric-${{ matrix.arch }}';
+          require('fs').writeFileSync('./dist/package.json', JSON.stringify(pkg, null, 2));
+        "
+        
+        # Create tarball with only required files
+        tar -czf aws-lambda-ric-${{ matrix.arch }}-${{ needs.get-version.outputs.version }}.tgz \
+          -C dist package.json index.mjs UserFunction.js rapid-client.node
+    
+    - name: Generate checksums
+      run: |
+        PACKAGE_FILE="aws-lambda-ric-${{ matrix.arch }}-${{ needs.get-version.outputs.version }}.tgz"
+        sha256sum $PACKAGE_FILE > checksums-${{ matrix.arch }}.sha256
+        sha512sum $PACKAGE_FILE > checksums-${{ matrix.arch }}.sha512
+        echo "Package: $PACKAGE_FILE (${{ matrix.arch }}) with version: ${{ needs.get-version.outputs.version }}" > checksums-${{ matrix.arch }}.txt
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: package-${{ matrix.arch }}-${{ needs.get-version.outputs.version }}
+        path: |
+          aws-lambda-ric-*-${{ needs.get-version.outputs.version }}.tgz
+          checksums-*
+        retention-days: 30
+
+  test:
+    needs: [get-version, build]
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+          - arch: aarch64
+            runner: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run unit tests - Node ${{ matrix.node-version }} (native $(arch))
+      run: |
+        docker build \
+          -f test/unit/Dockerfile.nodejs${{ matrix.node-version }}.x \
+          -t unit/nodejs.${{ matrix.node-version }}x \
+          .
+        docker run --rm unit/nodejs.${{ matrix.node-version }}x
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: codebuild-project-awsaws-lambda-nodejs-runtime-interface-client-${{ github.run_id }}-${{ github.run_attempt }}
+    needs: [get-version, build, test]
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download x86_64 artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: package-x86_64-${{ needs.get-version.outputs.version }}
+        path: ./artifacts/x86_64
+    
+    - name: Download aarch64 artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: package-aarch64-${{ needs.get-version.outputs.version }}
+        path: ./artifacts/aarch64
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
+    - name: Setup NPM authentication
+      run: |
+        NPM_TOKEN=$(aws secretsmanager get-secret-value --secret-id aws-lambda-runtimes/github/nodejs/npm-token --query SecretString --output text)
+        echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+        chmod 0600 .npmrc
+    
+    - name: Determine version and publish packages
+      id: version
+      run: |
+        if [[ "${{ github.ref }}" == refs/tags/rc-* ]]; then
+          RC_NUMBER=${GITHUB_REF#refs/tags/rc-}
+          PACKAGE_VERSION="${{ needs.get-version.outputs.version }}-rc.${RC_NUMBER}"
+          echo "package_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+          echo "is_rc=true" >> $GITHUB_OUTPUT
+          TAG_FLAG="--tag rc"
+        else
+          echo "package_version=${{ needs.get-version.outputs.version }}" >> $GITHUB_OUTPUT
+          TAG_FLAG=""
+        fi
+        
+        # Build and publish full package to npm
+        BUILD=1 npm install
+        npm run build
+        npm publish $TAG_FLAG --access=public
+    
+    - name: Combine checksums
+      run: |
+        cat ./artifacts/*/checksums-*.txt > combined-checksums.txt
+        cat ./artifacts/*/checksums-*.sha256 > combined-checksums.sha256
+        cat ./artifacts/*/checksums-*.sha512 > combined-checksums.sha512
+    
+    - name: Create GitHub Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          ./artifacts/*/aws-lambda-ric-*-*.tgz
+          combined-checksums.*
+        prerelease: ${{ steps.version.outputs.is_rc }}
