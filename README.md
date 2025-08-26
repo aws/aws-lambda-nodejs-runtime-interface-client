@@ -162,8 +162,6 @@ make init build
 ```
 Then,
 * to run unit tests: `make test`
-* to run integration tests: `make test-integ`
-* to run smoke tests: `make test-smoke`
 
 ### Raising a PR
 When modifying dependencies (`package.json`), make sure to:

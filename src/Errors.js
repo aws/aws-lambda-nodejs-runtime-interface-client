@@ -38,9 +38,9 @@ function toRapidResponse(error) {
   try {
     if (util.types.isNativeError(error) || _isError(error)) {
       return {
-        errorType: error.name?.replace(/\x7F/g, '%7F'),
-        errorMessage: error.message?.replace(/\x7F/g, '%7F'),
-        trace: error.stack.replace(/\x7F/g, '%7F').split('\n'),
+        errorType: error.name?.replaceAll('\x7F', '%7F'),
+        errorMessage: error.message?.replaceAll('\x7F', '%7F'),
+        trace: error.stack.replaceAll('\x7F', '%7F').split('\n'),
       };
     } else {
       return {
@@ -106,6 +106,13 @@ const errorClasses = [
   class UserCodeSyntaxError extends Error {},
   class MalformedStreamingHandler extends Error {},
   class InvalidStreamingOperation extends Error {},
+  class NodeJsExit extends Error {
+    constructor() {
+      super(
+        'The Lambda runtime client detected an unexpected Node.js exit code. This is most commonly caused by a Promise that was never settled. For more information, see https://nodejs.org/docs/latest/api/process.html#exit-codes',
+      );
+    }
+  },
   class UnhandledPromiseRejection extends Error {
     constructor(reason, promise) {
       super(reason);

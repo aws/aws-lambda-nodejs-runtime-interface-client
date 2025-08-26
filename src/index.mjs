@@ -11,6 +11,7 @@ const UserFunction = require('./UserFunction.js');
 const Errors = require('./Errors.js');
 const BeforeExitListener = require('./BeforeExitListener.js');
 const LogPatch = require('./LogPatch');
+const { checkForDeprecatedCallback } = require('./WarningForCallbackHandlers');
 
 export async function run(appRootOrHandler, handler = '') {
   LogPatch.patchConsole();
@@ -44,6 +45,7 @@ export async function run(appRootOrHandler, handler = '') {
     : await UserFunction.load(appRootOrHandler, handler);
 
   const metadata = UserFunction.getHandlerMetadata(handlerFunc);
+  checkForDeprecatedCallback(metadata);
   new Runtime(
     client,
     handlerFunc,
