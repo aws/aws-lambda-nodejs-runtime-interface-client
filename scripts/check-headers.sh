@@ -4,13 +4,11 @@
 
 set -e
 
-missing_files=()
-
-while IFS= read -r file; do
-  if ! grep -q 'Copyright.*Amazon\.com' "$file"; then
-    missing_files+=("$file")
+missing_files=($(git diff --name-only --diff-filter=M HEAD -- 'bin/**' 'scripts/**' 'src/**' 'test/**' | grep -E '\.(js|ts|mjs|mts|jsx|tsx|c|cpp|h|sh)$' | while read -r file; do
+  if ! git show HEAD:"$file" 2>/dev/null | grep -q 'Copyright.*Amazon\.com'; then
+    echo "$file"
   fi
-done < <(git ls-files 'bin/**' 'scripts/**' 'src/**' 'test/**' | grep -E '\.(js|ts|mjs|mts|jsx|tsx|c|cpp|h|sh)$')
+done))
 
 if [ ${#missing_files[@]} -gt 0 ]; then
   echo "❌ Copyright header check failed."

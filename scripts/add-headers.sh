@@ -7,8 +7,8 @@ set -e
 script_dir="$(dirname "$0")"
 files_modified=0
 
-while IFS= read -r file; do
-  if ! grep -q 'Copyright.*Amazon\.com' "$file"; then
+for file in $(git diff --name-only --diff-filter=M HEAD -- 'bin/**' 'scripts/**' 'src/**' 'test/**' | grep -E '\.(js|ts|mjs|mts|jsx|tsx|c|cpp|h|sh)$'); do
+  if ! git show HEAD:"$file" 2>/dev/null | grep -q 'Copyright.*Amazon\.com'; then
     if [[ "$file" == *.sh ]]; then
       sed "s|PLACEHOLDER|$file|" "$script_dir/patches/sh-files.patch" | git apply
     else
@@ -16,7 +16,7 @@ while IFS= read -r file; do
     fi
     files_modified=$((files_modified + 1))
   fi
-done < <(git ls-files 'bin/**' 'scripts/**' 'src/**' 'test/**' | grep -E '\.(js|ts|mjs|mts|jsx|tsx|c|cpp|h|sh)$')
+done
 
 if [ "$files_modified" -eq 0 ]; then
   echo "✓ All files already have copyright headers"
