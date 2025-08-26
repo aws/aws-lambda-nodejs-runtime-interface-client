@@ -8,13 +8,13 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-permissions:
-  id-token: write
-  contents: read
+permissions: {}
 
 jobs:
   get-version:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
@@ -28,6 +28,9 @@ jobs:
   build:
     needs: [get-version]
     timeout-minutes: 30
+    permissions:
+      id-token: write
+      contents: read
     strategy:
       matrix:
         include:
@@ -42,7 +45,10 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: 'lts/*'
+    
+    - name: Check copyright headers
+      run: npm run check-headers
     
     - name: Install build dependencies
       run: |
@@ -92,6 +98,8 @@ jobs:
 
   test:
     needs: [get-version, build]
+    permissions:
+      contents: read
     strategy:
       matrix:
         node-version: [18, 20, 22]
@@ -117,6 +125,7 @@ jobs:
     runs-on: codebuild-project-awsaws-lambda-nodejs-runtime-interface-client-${{ github.run_id }}-${{ github.run_attempt }}
     needs: [get-version, build, test]
     permissions:
+      id-token: write
       contents: write
     steps:
     - uses: actions/checkout@v4
@@ -136,11 +145,11 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: 'lts/*'
     
     - name: Setup NPM authentication
       run: |
-        NPM_TOKEN=$(aws secretsmanager get-secret-value --secret-id aws-lambda-runtimes/github/nodejs/npm-token --query SecretString --output text)
+        NPM_TOKEN=$(aws secretsmanager get-secret-value --secret-id ${{ secrets.NPM_SECRET_NAME }} --query SecretString --output text)
         echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
         chmod 0600 .npmrc
     
