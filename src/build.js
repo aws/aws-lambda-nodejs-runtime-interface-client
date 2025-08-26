@@ -21,11 +21,10 @@ const shared = {
   },
 };
 
-const buildOneSet = (target) => {
+const buildOneSet = () => {
   build({
     ...shared,
     outfile: `../dist/index.mjs`,
-    target,
   });
 
   // Always build UserFunction.js
@@ -40,7 +39,6 @@ const buildOneSet = (target) => {
       js: '})();',
     },
     outfile: `../dist/UserFunction.js`,
-    target,
   });
 
   // Copy rapid-client
@@ -53,4 +51,4 @@ const buildOneSet = (target) => {
   );
 };
 
-buildOneSet('node16.20.2');
+buildOneSet();
