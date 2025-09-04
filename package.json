@@ -7,6 +7,8 @@
   "gypfile": true,
   "scripts": {
     "archive": "npx rimraf aws-lambda-ric-*.tgz && npm install && npm run build && npm pack",
+    "changelog": "node ./scripts/generate-changelog.js",
+    "changelog:update": "node ./scripts/generate-changelog.js --update",
     "clean": "npx rimraf build node_modules package-lock.json",
     "copy-files": "mkdir -p dist && cp src/types/* dist/",
     "update-deps": "./scripts/update_dependencies.sh",
@@ -18,7 +20,10 @@
     "format": "npm run format:src && npm run format:test",
     "format:src": "prettier --check \"src/*.*js\" --write",
     "format:test": "prettier --check \"test/**/*.*js\" --write",
-    "lint": "eslint --ext \".js\" src test",
+    "check-headers": "./scripts/check-headers.sh",
+    "add-headers": "./scripts/add-headers.sh",
+    "lint": "eslint --ext \".js\" src test && npm run check-headers",
+    
     "fix": "eslint --fix --ext \".js\" src test",
     "test": "npm run test:unit",
     "test:unit": "mocha --recursive ./test/unit  --reporter ./test/util/StdoutReporter.test",
@@ -63,6 +68,7 @@
     "eslint": "8.42.0",
     "eslint-config-prettier": "8.8.0",
     "eslint-plugin-prettier": "4.2.1",
+
     "husky": "^8.0.3",
     "lambda-runtime": "file:./src/",
     "mocha": "^10.8.2",

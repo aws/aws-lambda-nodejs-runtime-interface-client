@@ -4,6 +4,8 @@ build
 src/*
 # Rapid-client.c to be used with node-gyp
 !src/rapid-client.cc
+# Include built native binary
+!dist/rapid-client.node
 test
 
 # Logs

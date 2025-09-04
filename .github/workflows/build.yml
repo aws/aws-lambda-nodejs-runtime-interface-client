@@ -1,0 +1,113 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  get-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Get version
+      id: version
+      run: |
+        BASE_VERSION=$(node -p "require('./package.json').version")
+        echo "version=$BASE_VERSION" >> $GITHUB_OUTPUT
+
+  build:
+    needs: [get-version]
+    timeout-minutes: 30
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      matrix:
+        arch: [x86_64, aarch64]
+    runs-on: codebuild-project-awsaws-lambda-nodejs-runtime-interface-client-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 'lts/*'
+    
+    - name: Check copyright headers
+      run: npm run check-headers
+    
+    - name: Install build dependencies
+      run: |
+        apt-get update
+        apt-get install -y cmake make g++ autotools-dev automake libtool
+    
+    - name: Build natively for ${{ matrix.arch }}
+      run: |
+        echo "Building for architecture: ${{ matrix.arch }}"
+        
+        # Build native dependencies and JavaScript 
+        BUILD=1 npm install
+        npm run build
+        
+        # Verify required files were created
+        if [ ! -f "dist/rapid-client.node" ] || [ ! -f "dist/index.mjs" ] || [ ! -f "dist/UserFunction.js" ]; then
+          echo "Error: Required files not found in dist directory"
+          exit 1
+        fi
+        
+        # Copy architecture-specific package.json to dist
+        node -e "
+          const pkg = require('./package.json');
+          pkg.name = 'aws-lambda-ric-${{ matrix.arch }}';
+          require('fs').writeFileSync('./dist/package.json', JSON.stringify(pkg, null, 2));
+        "
+        
+        # Create tarball with only required files
+        tar -czf aws-lambda-ric-${{ matrix.arch }}-${{ needs.get-version.outputs.version }}.tgz \
+          -C dist package.json index.mjs UserFunction.js rapid-client.node
+    
+    - name: Generate checksums
+      run: |
+        PACKAGE_FILE="aws-lambda-ric-${{ matrix.arch }}-${{ needs.get-version.outputs.version }}.tgz"
+        sha256sum $PACKAGE_FILE > checksums-${{ matrix.arch }}.sha256
+        sha512sum $PACKAGE_FILE > checksums-${{ matrix.arch }}.sha512
+        echo "Package: $PACKAGE_FILE (${{ matrix.arch }}) with version: ${{ needs.get-version.outputs.version }}" > checksums-${{ matrix.arch }}.txt
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: package-${{ matrix.arch }}-${{ needs.get-version.outputs.version }}
+        path: |
+          aws-lambda-ric-*-${{ needs.get-version.outputs.version }}.tgz
+          checksums-*
+        retention-days: 30
+
+  test:
+    needs: [get-version, build]
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+          - arch: aarch64
+            runner: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run unit tests - Node ${{ matrix.node-version }} (native $(arch))
+      run: |
+        docker build \
+          -f test/unit/Dockerfile.nodejs${{ matrix.node-version }}.x \
+          -t unit/nodejs.${{ matrix.node-version }}x \
+          .
+        docker run --rm unit/nodejs.${{ matrix.node-version }}x
