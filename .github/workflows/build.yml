@@ -6,8 +6,6 @@ on:
   pull_request:
     branches: [ main ]
 
-permissions: {}
-
 jobs:
   get-version:
     runs-on: ubuntu-latest
@@ -31,12 +29,8 @@ jobs:
       contents: read
     strategy:
       matrix:
-        include:
-          - arch: x86_64
-            runner: codebuild-project-awsaws-lambda-nodejs-runtime-interface-client-${{ github.run_id }}-${{ github.run_attempt }}
-          - arch: aarch64
-            runner: codebuild-project-awsaws-lambda-nodejs-runtime-interface-client-${{ github.run_id }}-${{ github.run_attempt }}
-    runs-on: ${{ matrix.runner }}
+        arch: [x86_64, aarch64]
+    runs-on: codebuild-project-awsaws-lambda-nodejs-runtime-interface-client-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
     - uses: actions/checkout@v4
     
