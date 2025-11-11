@@ -19,6 +19,17 @@ const HANDLERS_ROOT = path.join(TEST_ROOT, 'handlers');
 
 describe('UserFunction.load method', () => {
   const echoTestMessage = 'This is a echo test';
+
+  const runtimeSupportsTypeScript = () => {
+    const version = process.versions?.node;
+    if (!version) {
+      return false;
+    }
+
+    const major = parseInt(version.split('.')[0], 10);
+    return !Number.isNaN(major) && major >= 24;
+  };
+
   it('should successfully load a user function', async () => {
     const handler = await UserFunction.load(HANDLERS_ROOT, 'core.echo');
     const response = await handler(echoTestMessage);
@@ -400,6 +411,114 @@ describe('UserFunction.load method', () => {
 
     const response = await handler();
     response.should.equal('Hello from CJS!');
+  });
+
+  describe('TypeScript handlers', function () {
+    before(function () {
+      if (!runtimeSupportsTypeScript()) {
+        this.skip();
+      }
+    });
+
+    it('should successfully load a .ts handler without module type', async () => {
+      const handler = await UserFunction.load(
+        HANDLERS_ROOT,
+        'typescript/basicTs.handler',
+      );
+
+      const response = await handler();
+      response.should.equal('basic-ts');
+    });
+
+    it('should successfully load a .ts handler inside a module package', async () => {
+      const handler = await UserFunction.load(
+        path.join(HANDLERS_ROOT, 'typescript', 'esm'),
+        'index.handler',
+      );
+
+      const response = await handler();
+      response.should.equal('basic-esm');
+    });
+
+    it('should successfully load a .mts handler', async () => {
+      const handler = await UserFunction.load(
+        HANDLERS_ROOT,
+        'typescript/basicMts.handler',
+      );
+
+      const response = await handler();
+      response.should.equal('basic-mts');
+    });
+
+    it('should successfully load a .cts handler', async () => {
+      const handler = await UserFunction.load(
+        HANDLERS_ROOT,
+        'typescript/basicCts.handler',
+      );
+
+      const response = await handler();
+      response.should.equal('basic-cts');
+    });
+
+    it('should default to load the .ts file over the .mts module', async () => {
+      const handler = await UserFunction.load(
+        HANDLERS_ROOT,
+        'typescript/precedenceTsVsMts.handler',
+      );
+
+      const response = await handler();
+      response.should.equal('precedence-ts');
+    });
+
+    it('should default to load the .mts file over the .cts module', async () => {
+      const handler = await UserFunction.load(
+        HANDLERS_ROOT,
+        'typescript/precedenceMtsVsCts.handler',
+      );
+
+      const response = await handler();
+      response.should.equal('precedence-mts');
+    });
+  });
+
+  describe('TypeScript handlers on unsupported runtimes', () => {
+    let originalNodeDescriptor;
+
+    beforeEach(() => {
+      originalNodeDescriptor = Object.getOwnPropertyDescriptor(
+        process.versions,
+        'node',
+      );
+    });
+
+    afterEach(() => {
+      if (originalNodeDescriptor) {
+        Object.defineProperty(process.versions, 'node', originalNodeDescriptor);
+      } else {
+        delete process.versions.node;
+      }
+    });
+
+    it('should throw ImportModuleError for TypeScript handlers', async () => {
+      const versions = process.versions;
+      if (runtimeSupportsTypeScript()) {
+        Object.defineProperty(versions, 'node', {
+          value: '20.0.0',
+          configurable: true,
+          enumerable: originalNodeDescriptor
+            ? originalNodeDescriptor.enumerable
+            : true,
+          writable: originalNodeDescriptor
+            ? originalNodeDescriptor.writable
+            : false,
+        });
+      }
+
+      await UserFunction.load(
+        HANDLERS_ROOT,
+        'typescript/basicTs.handler',
+      ).should.be.rejectedWith(ImportModuleError);
+    });
   });
 
   it('should fail when using require in .mjs', async () => {

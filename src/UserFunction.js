@@ -122,12 +122,16 @@ function _hasFolderPackageJsonTypeModule(folder) {
   return _hasFolderPackageJsonTypeModule(path.resolve(folder, '..'));
 }
 
-function _hasPackageJsonTypeModule(file) {
-  // File must have a .js extension
-  const jsPath = file + '.js';
-  return fs.existsSync(jsPath)
-    ? _hasFolderPackageJsonTypeModule(path.resolve(path.dirname(jsPath)))
-    : false;
+function _runtimeSupportsTypeScript() {
+  const minimumNodeVersion = 24;
+
+  const version = process.versions?.node;
+  if (!version) {
+    return false;
+  }
+
+  const major = parseInt(version.split('.')[0], 10);
+  return !Number.isNaN(major) && major >= minimumNodeVersion;
 }
 
 /**
@@ -146,6 +150,8 @@ async function _tryRequire(appRoot, moduleRoot, module) {
 
   const lambdaStylePath = path.resolve(appRoot, moduleRoot, module);
 
+  const supportsTs = _runtimeSupportsTypeScript();
+
   // Extensionless files are loaded via require.
   const extensionless = _tryRequireFile(lambdaStylePath);
   if (extensionless) {
@@ -153,7 +159,9 @@ async function _tryRequire(appRoot, moduleRoot, module) {
   }
 
   // If package.json type != module, .js files are loaded via require.
-  const pjHasModule = _hasPackageJsonTypeModule(lambdaStylePath);
+  const pjHasModule = _hasFolderPackageJsonTypeModule(
+    path.resolve(path.dirname(lambdaStylePath)),
+  );
   if (!pjHasModule) {
     const loaded = _tryRequireFile(lambdaStylePath, '.js');
     if (loaded) {
@@ -161,14 +169,18 @@ async function _tryRequire(appRoot, moduleRoot, module) {
     }
   }
 
-  // If still not loaded, try .js, .mjs, and .cjs in that order.
+  // If still not loaded, try .js, .mjs, .cjs, .ts, .mts, and .cts in that order.
   // Files ending with .js are loaded as ES modules when the nearest parent package.json
   // file contains a top-level field "type" with a value of "module".
   // https://nodejs.org/api/packages.html#packages_type
   const loaded =
     (pjHasModule && (await _tryAwaitImport(lambdaStylePath, '.js'))) ||
     (await _tryAwaitImport(lambdaStylePath, '.mjs')) ||
-    _tryRequireFile(lambdaStylePath, '.cjs');
+    _tryRequireFile(lambdaStylePath, '.cjs') ||
+    (supportsTs && !pjHasModule && _tryRequireFile(lambdaStylePath, '.ts')) ||
+    (supportsTs && pjHasModule && (await _tryAwaitImport(lambdaStylePath, '.ts'))) ||
+    (supportsTs && (await _tryAwaitImport(lambdaStylePath, '.mts'))) ||
+    (supportsTs && _tryRequireFile(lambdaStylePath, '.cts'));
   if (loaded) {
     return loaded;
   }
