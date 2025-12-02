@@ -2,7 +2,7 @@ name: test-on-push-and-pr
 
 on:
   push:
-    branches: [ main ]
+    branches: [ nodejs22.x ]
   pull_request:
     branches: [ '*' ]
 
