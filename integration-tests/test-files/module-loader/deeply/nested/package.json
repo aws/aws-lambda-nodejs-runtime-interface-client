@@ -1,0 +1,4 @@
+{
+  "description": "This package.json is used to signify an ESM intent",
+  "type": "module"
+}

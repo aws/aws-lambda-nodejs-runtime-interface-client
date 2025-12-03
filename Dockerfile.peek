@@ -1,0 +1,18 @@
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023
+
+# Install Node.js and dependencies
+ARG NODE_VERSION=22.14.0
+
+RUN dnf update -y && \
+    dnf install -y \
+    tar \
+    xz \
+    tree \
+    vim \
+    && curl -fL https://nodejs.org/download/release/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-"$([[ "$(arch)" == "x86_64" ]] && echo "x64" || echo "arm64")".tar.xz | tar -C /usr --strip-components 1 -xJf -
+
+COPY temp_extract/package /app
+
+ENV AWS_LAMBDA_RUNTIME_API="127.0.0.1:8080"
+
+WORKDIR /app

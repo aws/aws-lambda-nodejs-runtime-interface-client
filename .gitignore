@@ -1,57 +1,17 @@
-build
+/node_modules
+/build
+/dist
+/coverage
+/build-artifacts/aws-lambda-ric*
+*.node
+/.byol
+.vscode
+.eslintcache
+/index.mjs
+.kiro/
 .DS_Store
 
-test/integration/resources/init
-
-# Logs
-logs
-*.log
-npm-debug.log*
-
-# Diagnostic reports (https://nodejs.org/api/report.html)
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Coverage directory used by tools like istanbul
-coverage
-*.lcov
-
-# nyc test coverage
-.nyc_output
-
-# Compiled binary addons (https://nodejs.org/api/addons.html)
-build/Release
-
-# Dependency directories
-node_modules/
-
-# Required for the async_init_with_node_modules unit test
-!test/handlers/async_init_with_node_modules/node_modules
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-.eslintignore
-
-# Output of 'npm pack'
-*.tgz
-
-# Build
-dist/
-
-# Stores VSCode versions used for testing VSCode extensions
-.vscode-test
-
-deps/artifacts/
-deps/aws-lambda-cpp*/
-deps/curl*/
-
-# Local codebuild
-codebuild.*/
+# deps folder - track source archives, ignore build artifacts
+/deps/artifacts/
+/deps/curl-*/
+/deps/aws-lambda-cpp-*/

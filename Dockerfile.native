@@ -1,0 +1,106 @@
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023 as builder
+
+ENV LD_LIBRARY_PATH=/var/lang/lib:$LD_LIBRARY_PATH
+
+RUN dnf -y install \
+    autoconf \
+    automake \
+    bsdtar \
+    bzip2 \
+    cmake \
+    flex \
+    gcc \
+    gcc-c++ \
+    gzip \
+    libtool \
+    make \
+    patch \
+    unzip \
+    xz \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf \
+    && mkdir -p /build/deps /tmp/curl /tmp/aws-lambda-cpp
+
+# Add dependency source files
+COPY ./build-artifacts/curl.tar.xz /tmp/
+COPY ./build-artifacts/aws-lambda-cpp.tar.xz /tmp/
+
+RUN cd /tmp && \
+    tar -xf curl.tar.xz -C curl --strip-components=0 && \
+    tar -xf aws-lambda-cpp.tar.xz -C aws-lambda-cpp --strip-components=0 && \
+    ls -la /tmp/curl/
+
+# Build curl
+WORKDIR /tmp/curl
+RUN autoreconf -fiv && \
+    CFLAGS="$CURL_CFLAGS" LDFLAGS="$CURL_LDFLAGS" ./configure \
+        --prefix /build/deps \
+        --disable-alt-svc \
+        --disable-ares \
+        --disable-cookies \
+        --disable-crypto-auth \
+        --disable-dateparse \
+        --disable-dict \
+        --disable-dnsshuffle \
+        --disable-doh \
+        --disable-file \
+        --disable-ftp \
+        --disable-get-easy-options \
+        --disable-gopher \
+        --disable-hsts \
+        --disable-http-auth \
+        --disable-imap \
+        --disable-ipv6 \
+        --disable-ldap \
+        --disable-ldaps \
+        --disable-libcurl-option \
+        --disable-manual \
+        --disable-mime \
+        --disable-mqtt \
+        --disable-netrc \
+        --disable-ntlm-wb \
+        --disable-pop3 \
+        --disable-progress-meter \
+        --disable-proxy \
+        --disable-pthreads \
+        --disable-rtsp \
+        --disable-shared \
+        --disable-smtp \
+        --disable-socketpair \
+        --disable-sspi \
+        --disable-telnet \
+        --disable-tftp \
+        --disable-threaded-resolver \
+        --disable-unix-sockets \
+        --disable-verbose \
+        --disable-versioned-symbols \
+        --with-pic \
+        --without-brotli \
+        --without-ca-bundle \
+        --without-gssapi \
+        --without-libidn2 \
+        --without-libpsl \
+        --without-librtmp \
+        --without-libssh2 \
+        --without-nghttp2 \
+        --without-nghttp3 \
+        --without-ngtcp2 \
+        --without-ssl \
+        --without-zlib \
+        --without-zstd && \
+    make -j "$(nproc)" && \
+    make -j "$(nproc)" install    
+
+# Build AWS Lambda CPP
+WORKDIR /tmp/aws-lambda-cpp/build
+RUN LDFLAGS="$AWS_LAMBDA_CPP_LDFLAGS" cmake3 .. \
+        -DCMAKE_CXX_FLAGS="-fPIC $AWS_LAMBDA_CPP_CXX_FLAGS" \
+        -DCMAKE_INSTALL_PREFIX=/build/deps \
+        -DCMAKE_MODULE_PATH=/build/deps/artifacts/lib/pkgconfig && \
+    make -j "$(nproc)" && \
+    make -j "$(nproc)" install
+
+RUN tar czf /tmp/deps.tar.gz -C /build deps
+
+FROM scratch
+COPY --from=builder /tmp/deps.tar.gz /deps.tar.gz

@@ -1,191 +1,185 @@
-## AWS Lambda NodeJS Runtime Interface Client
+# AWS Lambda Node.js Runtime Interface Client (RIC)
 
-We have open-sourced a set of software packages, Runtime Interface Clients (RIC), that implement the Lambda
- [Runtime API](https://docs.aws.amazon.com/lambda/latest/dg/runtimes-api.html), allowing you to seamlessly extend your preferred
-  base images to be Lambda compatible.
-The Lambda Runtime Interface Client is a lightweight interface that allows your runtime to receive requests from and send requests to the Lambda service.
+[![CI](https://github.com/aws/aws-lambda-nodejs-runtime-interface-client/actions/workflows/ci.yml/badge.svg)](https://github.com/aws/aws-lambda-nodejs-runtime-interface-client/actions/workflows/ci.yml)
+[![npm version](https://badge.fury.io/js/aws-lambda-ric.svg)](https://www.npmjs.com/package/aws-lambda-ric)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-The Lambda NodeJS Runtime Interface Client is vended through [npm](https://www.npmjs.com/package/aws-lambda-ric). 
-You can include this package in your preferred base image to make that base image Lambda compatible.
+This package implements the AWS Lambda Runtime Interface Client (RIC) for Node.js. It allows you to run Lambda functions in custom container images or local testing environments.
 
-## Requirements
-The NodeJS Runtime Interface Client package currently supports NodeJS versions:
- - 16.x
- - 18.x
- - 20.x
+The RIC enables communication between your Lambda function code and the Lambda Runtime API, handling the invoke lifecycle including initialization, invocation, and error reporting.
+
+## Supported Node.js Versions
+
+- Node.js 22.x and above
+
+## Installation
+
+```bash
+npm install aws-lambda-ric
+```
 
 ## Usage
 
-### Creating a Docker Image for Lambda with the Runtime Interface Client
-First step is to choose the base image to be used. The supported Linux OS distributions are:
+### Basic Usage
 
- - Amazon Linux (2 and 2023)
- - Alpine
- - CentOS
- - Debian
- - Ubuntu
+Create a handler file (e.g., `index.js`):
 
-The Runtime Interface Client can be installed outside of the Dockerfile as a dependency of the function we want to run in Lambda (run the below command in your function directory to add the dependency to `package.json`):
-```shell script
-npm install aws-lambda-ric --save
-```
-or inside the Dockerfile:
-```dockerfile
-RUN npm install aws-lambda-ric
-```
-
-Next step would be to copy your Lambda function code into the image's working directory.
-```dockerfile
-# Copy function code
-RUN mkdir -p ${FUNCTION_DIR}
-COPY myFunction/* ${FUNCTION_DIR}
-
-WORKDIR ${FUNCTION_DIR}
-
-# If the dependency is not in package.json uncomment the following line
-# RUN npm install aws-lambda-ric
-
-RUN npm install
-```
-
-The next step would be to set the `ENTRYPOINT` property of the Docker image to invoke the Runtime Interface Client and then set the `CMD` argument to specify the desired handler.
-
-Example Dockerfile (to keep the image light we used a multi-stage build):
-```dockerfile
-# Define custom function directory
-ARG FUNCTION_DIR="/function"
-
-FROM node:18-buster as build-image
-
-# Include global arg in this stage of the build
-ARG FUNCTION_DIR
-
-# Install aws-lambda-cpp build dependencies
-RUN apt-get update && \
-    apt-get install -y \
-    g++ \
-    make \
-    cmake \
-    unzip \
-    libcurl4-openssl-dev
-
-# Copy function code
-RUN mkdir -p ${FUNCTION_DIR}
-COPY myFunction/* ${FUNCTION_DIR}
-
-WORKDIR ${FUNCTION_DIR}
-
-RUN npm install
-
-# If the dependency is not in package.json uncomment the following line
-# RUN npm install aws-lambda-ric
-
-# Grab a fresh slim copy of the image to reduce the final size
-FROM node:18-buster-slim
-
-# Required for Node runtimes which use npm@8.6.0+ because
-# by default npm writes logs under /home/.npm and Lambda fs is read-only
-ENV NPM_CONFIG_CACHE=/tmp/.npm
-
-# Include global arg in this stage of the build
-ARG FUNCTION_DIR
-
-# Set working directory to function root directory
-WORKDIR ${FUNCTION_DIR}
-
-# Copy in the built dependencies
-COPY --from=build-image ${FUNCTION_DIR} ${FUNCTION_DIR}
-
-ENTRYPOINT ["/usr/local/bin/npx", "aws-lambda-ric"]
-CMD ["app.handler"]
-```
-
-Example NodeJS handler `app.js`:
-```js
-"use strict";
-
+```javascript
 exports.handler = async (event, context) => {
-    return 'Hello World!';
-}
+  console.log('Event:', JSON.stringify(event, null, 2));
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ message: 'Hello from Lambda!' })
+  };
+};
 ```
 
-### Local Testing
+### Using with Container Images
 
-To make it easy to locally test Lambda functions packaged as container images we open-sourced a lightweight web-server, Lambda Runtime Interface Emulator (RIE), which allows your function packaged as a container image to accept HTTP requests. You can install the [AWS Lambda Runtime Interface Emulator](https://github.com/aws/aws-lambda-runtime-interface-emulator) on your local machine to test your function. Then when you run the image function, you set the entrypoint to be the emulator. 
+When building custom Lambda container images, use the RIC as the entrypoint:
 
-*To install the emulator and test your Lambda function*
+```dockerfile
+FROM public.ecr.aws/lambda/nodejs:22
 
-1) From your project directory, run the following command to download the RIE from GitHub and install it on your local machine. 
+# Copy function code
+COPY index.js ${LAMBDA_TASK_ROOT}
 
-```shell script
-mkdir -p ~/.aws-lambda-rie && \
-    curl -Lo ~/.aws-lambda-rie/aws-lambda-rie https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/latest/download/aws-lambda-rie && \
-    chmod +x ~/.aws-lambda-rie/aws-lambda-rie
-```
-2) Run your Lambda image function using the docker run command. 
+# Install dependencies
+COPY package*.json ${LAMBDA_TASK_ROOT}/
+RUN npm install
 
-```shell script
-docker run -d -v ~/.aws-lambda-rie:/aws-lambda -p 9000:8080 \
-    --entrypoint /aws-lambda/aws-lambda-rie \
-    myfunction:latest \
-        /usr/local/bin/npx aws-lambda-ric app.handler
+CMD ["index.handler"]
 ```
 
-This runs the image as a container and starts up an endpoint locally at `http://localhost:9000/2015-03-31/functions/function/invocations`. 
+### Using with AWS Lambda Runtime Interface Emulator (RIE)
 
-3) Post an event to the following endpoint using a curl command: 
+For local testing, you can use the RIC with the [AWS Lambda Runtime Interface Emulator](https://github.com/aws/aws-lambda-runtime-interface-emulator):
 
-```shell script
-curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{}'
+```bash
+# Build your container
+docker build -t my-lambda-function .
+
+# Run with RIE
+docker run -p 9000:8080 my-lambda-function
+
+# Invoke the function
+curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{"message":"test"}'
 ```
 
-This command invokes the function running in the container image and returns a response.
+## Building from Source
 
-*Alternately, you can also include RIE as a part of your base image. See the AWS documentation on how to [Build RIE into your base image](https://docs.aws.amazon.com/lambda/latest/dg/images-test.html#images-test-alternative).*
+### Prerequisites
 
+- Node.js 22.x or later
+- npm
+- Docker (for container builds)
+- Make
 
-## Development
+### Local Development
 
-### Building the package
-Clone this repository and run:
+```bash
+# Clone the repository
+git clone https://github.com/aws/aws-lambda-nodejs-runtime-interface-client.git
+cd aws-lambda-nodejs-runtime-interface-client
 
-```shell script
-make init
-make build
+# Install dependencies
+npm install
+
+# Run tests
+npm test
+
+# Run linter
+npm run lint
+
+# Fix linting issues
+npm run lint:fix
 ```
 
-### Running tests
+### Build Modes
 
-Make sure the project is built:
-```shell script
-make init build
+The project supports multiple build modes:
+
+#### Metal Build (Local Development)
+
+Fast build for local development and quick iterations:
+
+```bash
+npm run build:metal
 ```
-Then,
-* to run unit tests: `make test`
 
-### Raising a PR
-When modifying dependencies (`package.json`), make sure to:
-1. Run `npm install` to generate an updated `package-lock.json`
-2. Commit both `package.json` and `package-lock.json` together
+- TypeScript compilation only
+- No native module compilation
+- ~5 seconds build time
 
-We require package-lock.json to be checked in to ensure consistent installations across development environments.
+#### Container Build (Full Build)
 
-### Troubleshooting
+Complete build including native module compilation:
 
-While running integration tests, you might encounter the Docker Hub rate limit error with the following body:
+```bash
+npm run build:container
 ```
-You have reached your pull rate limit. You may increase the limit by authenticating and upgrading: https://www.docker.com/increase-rate-limits
-```
-To fix the above issue, consider authenticating to a Docker Hub account by setting the Docker Hub credentials as below CodeBuild environment variables.
-```shell script
-DOCKERHUB_USERNAME=<dockerhub username>
-DOCKERHUB_PASSWORD=<dockerhub password>
-```
-Recommended way is to set the Docker Hub credentials in CodeBuild job by retrieving them from AWS Secrets Manager.
-## Security
 
-If you discover a potential security issue in this project we ask that you notify AWS/Amazon Security via our [vulnerability reporting page](http://aws.amazon.com/security/vulnerability-reporting/). Please do **not** create a public github issue.
+- Builds using Docker on AL2023 base image
+- Compiles native C++ dependencies
+- Produces deployable artifacts
+- ~2-3 minutes build time
+
+### Testing with RIE
+
+To test the runtime using the AWS Lambda Runtime Interface Emulator:
+
+```bash
+# Build the project (one-time)
+npm run build:container
+
+# Run with RIE
+npm run peek:rie
+
+# In another terminal, invoke the function
+curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{"message":"test"}'
+```
+
+### Testing in Lambda using Container Image
+
+To deploy and test as a Lambda container function:
+
+```bash
+# Build the project
+npm run build:container
+
+# Review and update variables in scripts/lambda-build.sh
+
+# Build and deploy
+npm run peek:lambda
+```
+
+## Architecture
+
+The RIC consists of several components:
+
+- **Runtime Client**: Communicates with the Lambda Runtime API
+- **Context Builder**: Constructs the Lambda context object
+- **Function Loader**: Loads and resolves user handler functions
+- **Logging**: Handles structured logging to CloudWatch
+- **Streaming**: Supports response streaming for applicable invocation modes
+
+### Native Module
+
+The RIC includes a native C++ module for high-performance communication with the Lambda Runtime API. This module is built using:
+
+- [aws-lambda-cpp](https://github.com/awslabs/aws-lambda-cpp) - AWS Lambda C++ runtime
+- [curl](https://curl.se/) - HTTP client library
+
+Pre-built archives for these dependencies are included in the `build-artifacts/` directory.
+
+## Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
-This project is licensed under the Apache-2.0 License.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+## Security
+
+See [CONTRIBUTING.md](CONTRIBUTING.md#security-issue-notifications) for information on reporting security issues.

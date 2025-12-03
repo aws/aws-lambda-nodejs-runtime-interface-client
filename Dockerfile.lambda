@@ -1,0 +1,12 @@
+FROM public.ecr.aws/lambda/nodejs:24-preview
+
+# Swap RIC
+ADD build-artifacts/aws-lambda-ric-*.tgz /tmp/
+RUN mv /tmp/package/* /var/runtime/ && rm -rf /tmp/package
+
+COPY resources/index.mjs /var/task/
+
+ENV LAMBDA_TASK_ROOT=/var/task
+ENV _HANDLER="index.handler"
+
+CMD [ "index.handler" ]
