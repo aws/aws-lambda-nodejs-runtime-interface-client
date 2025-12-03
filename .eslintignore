@@ -1,7 +1,0 @@
-node_modules
-**/node_modules
-
-async_init_package
-test-handlers
-
-dist/**
