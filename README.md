@@ -1,6 +1,6 @@
 # AWS Lambda Node.js Runtime Interface Client (RIC)
 
-[![CI](https://github.com/aws/aws-lambda-nodejs-runtime-interface-client/actions/workflows/ci.yml/badge.svg)](https://github.com/aws/aws-lambda-nodejs-runtime-interface-client/actions/workflows/ci.yml)
+[![CI](https://github.com/aws/aws-lambda-nodejs-runtime-interface-client/actions/workflows/test-on-push-and-pr.yml/badge.svg)](https://github.com/aws/aws-lambda-nodejs-runtime-interface-client/actions/workflows/test-on-push-and-pr.yml/badge.svg)
 [![npm version](https://badge.fury.io/js/aws-lambda-ric.svg)](https://www.npmjs.com/package/aws-lambda-ric)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
