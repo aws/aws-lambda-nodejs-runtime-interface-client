@@ -40,6 +40,10 @@
     "src/native/rapid-client.cc",
     "scripts/preinstall.sh",
     "scripts/postinstall.sh",
+    "LICENSE",
+    "NOTICE",
+    "THIRD-PARTY-LICENSES",
+    "README.md",
     "!**/*.test.ts"
   ],
   "devDependencies": {
