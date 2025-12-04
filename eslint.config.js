@@ -23,6 +23,7 @@ export default defineConfig([
       "node_modules/**",
       "build/**",
       "build-artifacts/**",
+      "deps/**",
       "dist/**",
       "coverage/**",
       ".byol/**",

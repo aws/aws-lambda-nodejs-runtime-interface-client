@@ -1,4 +1,4 @@
-FROM public.ecr.aws/lambda/nodejs:24-preview
+FROM public.ecr.aws/lambda/nodejs:24
 
 # Swap RIC
 ADD build-artifacts/aws-lambda-ric-*.tgz /tmp/

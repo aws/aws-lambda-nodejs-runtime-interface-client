@@ -17,8 +17,29 @@ if ! ls build-artifacts/aws-lambda-ric-*.tgz 1> /dev/null 2>&1; then
     exit 1
 fi
 
-# Build Lambda image
-docker build -t ${IMAGE_NAME}:${TAG} -f Dockerfile.lambda .
+# Detect architecture from the Docker image that was built
+DOCKER_ARCH=$(docker inspect ric/nodejs-js:latest --format '{{.Architecture}}' 2>/dev/null || echo "")
+if [[ "$DOCKER_ARCH" == "arm64" ]]; then
+    LAMBDA_ARCH="arm64"
+    PLATFORM="linux/arm64"
+elif [[ "$DOCKER_ARCH" == "amd64" ]]; then
+    LAMBDA_ARCH="x86_64"
+    PLATFORM="linux/amd64"
+else
+    # Fallback to host architecture
+    HOST_ARCH=$(uname -m)
+    if [[ "$HOST_ARCH" == "arm64" || "$HOST_ARCH" == "aarch64" ]]; then
+        LAMBDA_ARCH="arm64"
+        PLATFORM="linux/arm64"
+    else
+        LAMBDA_ARCH="x86_64"
+        PLATFORM="linux/amd64"
+    fi
+fi
+echo "Detected architecture: $LAMBDA_ARCH (platform: $PLATFORM)"
+
+# Build Lambda image (--provenance=false ensures Docker v2 format compatible with Lambda)
+docker build --provenance=false --platform "${PLATFORM}" -t ${IMAGE_NAME}:${TAG} -f Dockerfile.lambda .
 
 # Check if ECR repository exists, create if it doesn't
 if ! aws ecr describe-repositories --region ${AWS_REGION} --repository-names ${ECR_REPO_NAME} &> /dev/null; then
@@ -74,19 +95,39 @@ ROLE_ARN=$(aws iam get-role --region ${AWS_REGION} --role-name ${ROLE_NAME} --qu
 
 # Check if the function exists
 if aws lambda get-function --region ${AWS_REGION} --function-name ${FUNCTION_NAME} &> /dev/null; then
-    echo "Updating existing Lambda function ${FUNCTION_NAME}"
-    aws lambda update-function-code \
-        --region ${AWS_REGION} \
-        --function-name ${FUNCTION_NAME} \
-        --image-uri ${ECR_URI}/${ECR_REPO_NAME}:${TAG}
+    # Check if architecture matches
+    CURRENT_ARCH=$(aws lambda get-function-configuration --region ${AWS_REGION} --function-name ${FUNCTION_NAME} --query 'Architectures[0]' --output text)
+    if [[ "$CURRENT_ARCH" != "$LAMBDA_ARCH" ]]; then
+        echo "Architecture mismatch: Lambda is $CURRENT_ARCH, image is $LAMBDA_ARCH"
+        echo "Deleting and recreating function with correct architecture..."
+        aws lambda delete-function --region ${AWS_REGION} --function-name ${FUNCTION_NAME}
+        sleep 5
+        echo "Creating Lambda function ${FUNCTION_NAME} with architecture ${LAMBDA_ARCH}"
+        aws lambda create-function \
+            --region ${AWS_REGION} \
+            --function-name ${FUNCTION_NAME} \
+            --package-type Image \
+            --code ImageUri=${ECR_URI}/${ECR_REPO_NAME}:${TAG} \
+            --role ${ROLE_ARN} \
+            --architectures ${LAMBDA_ARCH} \
+            --timeout 30 \
+            --memory-size 128
+    else
+        echo "Updating existing Lambda function ${FUNCTION_NAME}"
+        aws lambda update-function-code \
+            --region ${AWS_REGION} \
+            --function-name ${FUNCTION_NAME} \
+            --image-uri ${ECR_URI}/${ECR_REPO_NAME}:${TAG}
+    fi
 else
-    echo "Creating new Lambda function ${FUNCTION_NAME}"
+    echo "Creating new Lambda function ${FUNCTION_NAME} with architecture ${LAMBDA_ARCH}"
     aws lambda create-function \
         --region ${AWS_REGION} \
         --function-name ${FUNCTION_NAME} \
         --package-type Image \
         --code ImageUri=${ECR_URI}/${ECR_REPO_NAME}:${TAG} \
         --role ${ROLE_ARN} \
+        --architectures ${LAMBDA_ARCH} \
         --timeout 30 \
         --memory-size 128
 fi

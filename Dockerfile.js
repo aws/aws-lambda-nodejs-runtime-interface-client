@@ -27,7 +27,7 @@ COPY package.json tsconfig.json eslint.config.js vitest.config.js vitest.setup.t
 
 WORKDIR /app
 
-RUN npm install
+RUN npm install --ignore-scripts
 
 COPY src /app/src
 COPY scripts/build.js /app/scripts/build.js

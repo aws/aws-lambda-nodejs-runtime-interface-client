@@ -170,7 +170,7 @@ The RIC includes a native C++ module for high-performance communication with the
 - [aws-lambda-cpp](https://github.com/awslabs/aws-lambda-cpp) - AWS Lambda C++ runtime
 - [curl](https://curl.se/) - HTTP client library
 
-Pre-built archives for these dependencies are included in the `build-artifacts/` directory.
+Pre-built archives for these dependencies are included in the `deps/` directory.
 
 ## Contributing
 
