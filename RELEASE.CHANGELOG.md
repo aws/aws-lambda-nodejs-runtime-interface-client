@@ -1,3 +1,7 @@
+### Dec 4, 2025
+`4.0.0`
+- Initial release of `v4` AWS Lambda Runtime Interface Client for NodeJS with typescript and multiconcurrency support for Node.js 24 and Lambda Managed Instances.
+
 ### May 21, 2025
 `3.3.0`
 - Add support for multi tenancy ([#128](https://github.com/aws/aws-lambda-nodejs-runtime-interface-client/pull/128))

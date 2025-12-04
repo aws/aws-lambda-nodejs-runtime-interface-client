@@ -66,6 +66,56 @@ docker run -p 9000:8080 my-lambda-function
 curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{"message":"test"}'
 ```
 
+### Building on Custom Linux Distributions
+
+You can build and run Lambda functions with the RIC on your own platform. Here's a minimal Dockerfile example:
+
+```dockerfile
+FROM quay.io/centos/centos:stream9 AS build-image
+
+ARG NODE_VERSION=22.14.0
+ARG FUNCTION_DIR="/function"
+
+# Install build dependencies
+RUN dnf -y install \
+    autoconf \
+    automake \
+    cmake \
+    gcc \
+    gcc-c++ \
+    libtool \
+    make \
+    python3 \
+    xz \
+    && dnf clean all
+
+# Install Node.js
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then NODE_ARCH="x64"; else NODE_ARCH="arm64"; fi && \
+    curl -fsSL https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz | \
+    tar -xJ -C /usr/local --strip-components=1
+
+# Create function directory
+RUN mkdir -p ${FUNCTION_DIR}
+WORKDIR ${FUNCTION_DIR}
+
+RUN npm install aws-lambda-ric
+
+ENTRYPOINT ["npx", "aws-lambda-ric"]
+CMD ["index.handler"]
+```
+
+Build and run locally with RIE:
+
+```bash
+docker build -t my-lambda .
+docker run -p 9000:8080 \
+  -e AWS_LAMBDA_FUNCTION_NAME=test \
+  -v ~/.aws-lambda-rie:/aws-lambda \
+  --entrypoint /aws-lambda/aws-lambda-rie \
+  my-lambda npx aws-lambda-ric index.handler
+```
+
 ## Building from Source
 
 ### Prerequisites
@@ -73,7 +123,6 @@ curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" -d
 - Node.js 22.x or later
 - npm
 - Docker (for container builds)
-- Make
 
 ### Local Development
 
@@ -85,44 +134,56 @@ cd aws-lambda-nodejs-runtime-interface-client
 # Install dependencies
 npm install
 
-# Run tests
+# Run all tests with coverage and linting
 npm test
+
+# Run unit tests only
+npm run test:unit
+
+# Run integration tests only
+npm run test:integ
 
 # Run linter
 npm run lint
 
 # Fix linting issues
 npm run lint:fix
+
+# Clean build artifacts
+npm run clean
 ```
 
-### Build Modes
+### Build Commands
 
-The project supports multiple build modes:
+#### Local Build
 
-#### Metal Build (Local Development)
-
-Fast build for local development and quick iterations:
+Build TypeScript and package for distribution:
 
 ```bash
-npm run build:metal
+npm run build
 ```
 
-- TypeScript compilation only
-- No native module compilation
-- ~5 seconds build time
+This runs tests, compiles TypeScript, and packages the output.
+
+Individual steps:
+```bash
+npm run compile    # TypeScript compilation only
+npm run pkg        # Package with esbuild
+```
 
 #### Container Build (Full Build)
 
-Complete build including native module compilation:
+Complete build including native module compilation for Linux:
 
 ```bash
 npm run build:container
 ```
 
 - Builds using Docker on AL2023 base image
-- Compiles native C++ dependencies
-- Produces deployable artifacts
-- ~2-3 minutes build time
+- Compiles native C++ dependencies (curl, aws-lambda-cpp)
+- Produces deployable artifacts in `build-artifacts/`
+- Targets `linux/amd64` by default for Lambda compatibility
+- Use `PLATFORM=linux/arm64 npm run build:container` for ARM64 Lambda
 
 ### Testing with RIE
 
@@ -139,6 +200,19 @@ npm run peek:rie
 curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{"message":"test"}'
 ```
 
+For multi-concurrent testing:
+```bash
+npm run peek:rie:mc
+```
+
+### Interactive Container Testing
+
+To explore the built package in an interactive container:
+
+```bash
+npm run peek:container
+```
+
 ### Testing in Lambda using Container Image
 
 To deploy and test as a Lambda container function:
@@ -149,7 +223,7 @@ npm run build:container
 
 # Review and update variables in scripts/lambda-build.sh
 
-# Build and deploy
+# Build and deploy (requires AWS credentials)
 npm run peek:lambda
 ```
 

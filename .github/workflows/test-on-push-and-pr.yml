@@ -1,24 +1,27 @@
-name: test-on-push-and-pr
+name: CI
 
 on:
   push:
-    branches: [ nodejs22.x ]
+    branches: [nodejs24.x]
   pull_request:
-    branches: [ '*' ]
+    branches: [nodejs24.x]
 
 jobs:
-  unit-test:
+  build-and-test:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: [18, 20, 22]
-    
     steps:
-    - uses: actions/checkout@v5
-    - name: Build and run tests for Node.js ${{ matrix.node-version }}
-      run: |
-        docker build -f test/unit/Dockerfile.nodejs${{ matrix.node-version }}.x -t unit/nodejs.${{ matrix.node-version }}x .
-        docker run unit/nodejs.${{ matrix.node-version }}x
+      - uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Build and test
+        run: npm run build
 
 
