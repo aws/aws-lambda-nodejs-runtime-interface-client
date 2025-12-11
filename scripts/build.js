@@ -11,6 +11,9 @@ build({
   sourcemap: false,
   minify: false,
   outfile: OUT_FILE,
+  banner: {
+    js: "#!/usr/bin/env node",
+  },
 })
   .then(() => {
     console.log("esbuild succeeded: output at", OUT_FILE);
