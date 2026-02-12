@@ -38,9 +38,9 @@ CURL_DIR="$DEPS_DIR/curl-src"
 mkdir -p "$CURL_DIR"
 # Use -o for busybox tar (Alpine), --no-same-owner for GNU tar
 if tar --version 2>/dev/null | grep -q GNU; then
-    tar xJf ./curl.tar.xz --no-same-owner -C "$CURL_DIR"
+    tar xJf ./curl.tar.xz --strip-components=1 --no-same-owner -C "$CURL_DIR"
 else
-    tar xJf ./curl.tar.xz -o -C "$CURL_DIR"
+    tar xJf ./curl.tar.xz --strip-components=1 -o -C "$CURL_DIR"
 fi
 if [ ! -f "$CURL_DIR/configure" ]; then
     echo "Error: Failed to extract curl archive" >&2
