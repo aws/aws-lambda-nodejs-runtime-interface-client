@@ -1,6 +1,6 @@
 {
   "name": "aws-lambda-ric",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "description": "AWS Lambda Runtime Interface Client for Node.js",
   "license": "Apache-2.0",
   "repository": {
