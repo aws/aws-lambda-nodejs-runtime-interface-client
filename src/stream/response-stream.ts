@@ -161,6 +161,26 @@ export function createResponseStream(
     req.destroy(err);
   });
 
+  // Set the customer's highWaterMark on the OutgoingMessage's internal
+  // kHighWaterMark. Without this, the OM uses its default (64KB) for write()
+  // return values before the socket connects, causing the customer's HWM to
+  // be ignored. On Node 24.16+ (PR #62936), this mismatch causes a drain
+  // deadlock when socket HWM > OM HWM.
+  //
+  // We access kHighWaterMark via Object.getOwnPropertySymbols because Node
+  // does not expose a public API to set it on ClientRequest after construction.
+  // If the symbol is not found (e.g., future Node version changes internals),
+  // we silently fall back to the previous behavior — no crash, just the same
+  // pre-existing limitation that existed before this fix.
+  if (options.httpOptions.highWaterMark != null) {
+    const syms = Object.getOwnPropertySymbols(req);
+    const kHWM = syms.find((s) => s.toString() === "Symbol(kHighWaterMark)");
+    if (kHWM) {
+      (req as unknown as Record<symbol, number>)[kHWM] =
+        options.httpOptions.highWaterMark;
+    }
+  }
+
   req.setContentType = (contentType: string) => {
     if (status !== STATUS_READY) {
       throw new InvalidStreamingOperation("Cannot set content-type, too late.");
