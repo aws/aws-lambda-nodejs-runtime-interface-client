@@ -68,13 +68,15 @@ describe("runtime-setup", () => {
       );
     });
 
-    it("should throw if LAMBDA_TASK_ROOT is not set", async () => {
+    it("should fall back to process.cwd() when LAMBDA_TASK_ROOT is not set", async () => {
       // GIVEN
       delete process.env.LAMBDA_TASK_ROOT;
 
       // WHEN & THEN
-      await expect(createRuntime()).rejects.toThrow(
-        "LAMBDA_TASK_ROOT environment variable is not set",
+      await createRuntime();
+      expect(UserFunctionLoader.load).toHaveBeenCalledWith(
+        process.cwd(),
+        expect.any(String),
       );
     });
   });

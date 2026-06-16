@@ -18,7 +18,12 @@ export async function createRuntime(
   const isMultiConcurrent = isMultiConcurrentMode();
   const runtimeApi = process.env.AWS_LAMBDA_RUNTIME_API;
   const handlerString = process.env._HANDLER;
-  const taskRoot = process.env.LAMBDA_TASK_ROOT;
+  // LAMBDA_TASK_ROOT is a restricted environment variable set to /var/task.
+  // If we set it as required we are forcing customers to set it to a value that
+  // can't change.
+  // We fall back to process.cwd() to allow OCI customers to place the handler wherever
+  // they want.
+  const taskRoot = process.env.LAMBDA_TASK_ROOT || process.cwd();
 
   if (!runtimeApi) {
     throw new PlatformError(
@@ -27,9 +32,6 @@ export async function createRuntime(
   }
   if (!handlerString) {
     throw new PlatformError("_HANDLER environment variable is not set");
-  }
-  if (!taskRoot) {
-    throw new PlatformError("LAMBDA_TASK_ROOT environment variable is not set");
   }
 
   const rapidClient = await RAPIDClient.create(
