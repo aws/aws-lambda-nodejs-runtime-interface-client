@@ -32,8 +32,9 @@ RUN cd /tmp && \
 
 # Build curl
 WORKDIR /tmp/curl
-RUN autoreconf -fiv && \
-    CFLAGS="$CURL_CFLAGS" LDFLAGS="$CURL_LDFLAGS" ./configure \
+# Skip autoreconf - the curl tarball includes a pre-generated configure script
+# Running autoreconf hangs on ARM platforms due to bash/libtool/autoconf issue
+RUN CFLAGS="$CURL_CFLAGS" LDFLAGS="$CURL_LDFLAGS" ./configure \
         --prefix /build/deps \
         --disable-alt-svc \
         --disable-ares \
