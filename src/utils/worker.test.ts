@@ -21,9 +21,9 @@ const CUSTOMER_ENV_RESPONSE = 5;
 const CPU_MAX_QUOTA = 200000;
 const CPU_MAX_PERIOD = 100000;
 const CPU_MAX_CALCULATED_CPUS = 2;
-const CPU_MAX_EXPECTED_WORKERS = 8 * CPU_MAX_CALCULATED_CPUS;
+const CPU_MAX_EXPECTED_WORKERS = 2 * CPU_MAX_CALCULATED_CPUS + 1;
 const DEFAULT_CPU_COUNT = 1;
-const DEFAULT_WORKER_COUNT = 8 * DEFAULT_CPU_COUNT;
+const DEFAULT_WORKER_COUNT = 2 * DEFAULT_CPU_COUNT + 1;
 const OS_DETECTED_CPUS = 4;
 
 describe("worker utils", () => {
@@ -106,7 +106,7 @@ describe("worker utils", () => {
       const result = getWorkerCount();
 
       // THEN
-      expect(result).toBe(8 * OS_DETECTED_CPUS);
+      expect(result).toBe(2 * OS_DETECTED_CPUS + 1);
     });
 
     it("should handle invalid cpu.max values", async () => {
@@ -128,8 +128,8 @@ describe("worker utils", () => {
       // WHEN
       const result = getWorkerCount();
 
-      // THEN
-      expect(result).toBeNaN();
+      // THEN - invalid value is ignored, falls back to CPU detection
+      expect(result).toBe(DEFAULT_WORKER_COUNT);
     });
 
     it("should handle zero value", () => {
@@ -139,8 +139,8 @@ describe("worker utils", () => {
       // WHEN
       const result = getWorkerCount();
 
-      // THEN
-      expect(result).toBe(0);
+      // THEN - zero is invalid, falls back to CPU detection
+      expect(result).toBe(DEFAULT_WORKER_COUNT);
     });
   });
 });

@@ -17,6 +17,7 @@ import {
   RetryOptions,
   DEFAULT_RETRY_OPTIONS,
   calculateBackoffDelay,
+  getPollingCount,
 } from "../utils/index.js";
 
 import { StreamOptions } from "../context/types.js";
@@ -71,7 +72,7 @@ export class RAPIDClient {
     this.nativeClient = nativeClient;
     this.agent = new this.httpClient.Agent({
       keepAlive: true,
-      maxSockets: 1,
+      maxSockets: isMultiConcurrent ? getPollingCount() : 1,
     });
     this.useAlternativeClient = shouldUseAlternativeClient();
     this.isMultiConcurrent = isMultiConcurrent;
