@@ -353,6 +353,30 @@ describe("Runtime", () => {
         ]);
       });
 
+      it("should set tenantId in InvokeStore for buffered invocations", async () => {
+        // GIVEN
+        const mockRapidClient = createMockRapidClient(-1, false, true);
+        const storeOrder: (string | undefined)[] = [];
+
+        const BufferedHandler: BufferedHandler = async () => {
+          storeOrder.push(invokeStore.getTenantId());
+          await new Promise((resolve) => setTimeout(resolve, 50)); // Simulate work
+          return "done";
+        };
+
+        const runtime = Runtime.create({
+          rapidClient: mockRapidClient,
+          handler: BufferedHandler,
+          isMultiConcurrent: false,
+        });
+
+        // WHEN
+        await startAndTickRuntime(runtime, 60);
+
+        // THEN - tenantId is pinned to the sandbox, constant across invocations
+        expect(storeOrder).toEqual(["test-tenant", "test-tenant"]);
+      });
+
       it("should set requestId and traceId in InvokeStore for streaming invocations", async () => {
         // GIVEN
         const mockRapidClient = createMockRapidClient(3, true);
@@ -551,6 +575,45 @@ describe("Runtime", () => {
         ]);
 
         expect(completionOrder).toEqual(["test-id-2", "test-id-1"]);
+
+        expect(mockRapidClient.nextInvocation).toHaveBeenCalledTimes(3);
+        expect(mockRapidClient.postInvocationResponse).toHaveBeenCalledTimes(2);
+      });
+
+      it("should set tenantId in InvokeStore for concurrent invocations", async () => {
+        // GIVEN
+        const mockRapidClient = createMockRapidClient(3, false, true);
+        const storeOrder: (string | undefined)[] = [];
+        const completionOrder: (string | undefined)[] = [];
+
+        const BufferedHandler: BufferedHandler = async () => {
+          const invocationNumber = storeOrder.length + 1;
+
+          storeOrder.push(invokeStore.getTenantId());
+
+          await new Promise((resolve) =>
+            setTimeout(resolve, invocationNumber === 1 ? 10 : 5),
+          );
+
+          completionOrder.push(invokeStore.getTenantId());
+
+          return "done";
+        };
+
+        const runtime = Runtime.create({
+          rapidClient: mockRapidClient,
+          handler: BufferedHandler,
+          isMultiConcurrent: true,
+        });
+
+        // WHEN
+        runtime.start();
+        await new Promise((resolve) => setTimeout(resolve, 20));
+
+        // THEN - tenantId is pinned to the sandbox, so every concurrent
+        // invocation reads the same value, both at start and after async gaps.
+        expect(storeOrder).toEqual(["test-tenant", "test-tenant"]);
+        expect(completionOrder).toEqual(["test-tenant", "test-tenant"]);
 
         expect(mockRapidClient.nextInvocation).toHaveBeenCalledTimes(3);
         expect(mockRapidClient.postInvocationResponse).toHaveBeenCalledTimes(2);
@@ -897,6 +960,7 @@ async function startAndTickRuntime(
 function createMockRapidClient(
   throttleAt: number = -1,
   passXRayTraceId: boolean = false,
+  passTenantId: boolean = false,
 ): RAPIDClient {
   let invocationCount = 0;
   return {
@@ -913,6 +977,14 @@ function createMockRapidClient(
           ...(passXRayTraceId
             ? {
                 "lambda-runtime-trace-id": `trace-id-${invocationCount}`,
+              }
+            : {}),
+          ...(passTenantId
+            ? {
+                // tenantId is pinned to the sandbox, so it's constant across
+                // every invocation in the execution environment's lifecycle
+                // (unlike requestId/traceId, which change per invocation).
+                "lambda-runtime-aws-tenant-id": "test-tenant",
               }
             : {}),
         },
