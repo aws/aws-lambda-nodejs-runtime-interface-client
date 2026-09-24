@@ -50,9 +50,12 @@ fi
 echo "Building curl..."
 (
     cd "$CURL_DIR"
-    # Only run autoreconf if configure doesn't exist or is older than configure.ac
-    if [ ! -f configure ] || [ configure.ac -nt configure ]; then
-        autoreconf -fiv
+    # The curl tarball includes a pre-generated configure script.
+    # We skip autoreconf as it hangs on ARM platforms due to a known
+    # bash/libtool/autoconf interaction issue.
+    if [ ! -f configure ]; then
+        echo "Error: configure script not found in curl archive" >&2
+        exit 1
     fi
     ./configure \
         --prefix "$ARTIFACTS_DIR" \
