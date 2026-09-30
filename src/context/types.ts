@@ -35,6 +35,12 @@ export interface InvokeContext {
 
   // Methods
   getRemainingTimeInMillis(): number;
+  
+  /**
+   * Returns the W3C trace context fields (traceparent, tracestate, baggage)
+   * that were carried on `clientContext.w3c` at invoke time.
+   */
+  w3c(): Record<string, string>;
 }
 
 export interface StreamOptions {
