@@ -1,0 +1,49 @@
+name: dockerized-test
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [nodejs24.x]
+  pull_request:
+    branches: ['*']
+  workflow_dispatch:
+
+jobs:
+  dockerized-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node_version: ['22', '24']
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node_version }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Build the RIC tarball
+        # Produces build-artifacts/aws-lambda-ric-<version>.tgz, which
+        # Dockerfile.test unpacks into /var/runtime in the test image.
+        run: npm run build:container
+
+      - name: Build the test image
+        run: |
+          docker build . \
+            -t local/test \
+            -f Dockerfile.test \
+            --build-arg BASE_IMAGE=public.ecr.aws/lambda/nodejs:${{ matrix.node_version }}
+
+      - name: Run dockerized suites
+        uses: aws/containerized-test-runner-for-aws-lambda@511d270614f2c6b1613848db6dcf920a591c3c89 # main
+        with:
+          suiteFileArray: '["./test/dockerized/suites/*.json"]'
+          dockerImageName: 'local/test'
+          taskFolder: './test/dockerized/tasks'
