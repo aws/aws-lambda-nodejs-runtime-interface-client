@@ -38,7 +38,7 @@ jobs:
             --build-arg BASE_IMAGE=public.ecr.aws/lambda/nodejs:24
 
       - name: Run dockerized suites
-        uses: aws/containerized-test-runner-for-aws-lambda@511d270614f2c6b1613848db6dcf920a591c3c89 # main
+        uses: aws/containerized-test-runner-for-aws-lambda@76eacfb110903739d9c5f7fcdaafede6324a1473 # maxday/client-context
         with:
           suiteFileArray: '["./test/dockerized/suites/*.json"]'
           dockerImageName: 'local/test'
