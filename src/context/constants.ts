@@ -24,6 +24,14 @@ export const REQUIRED_ENV_VARS = [
   "AWS_LAMBDA_LOG_STREAM_NAME",
 ];
 
+export const W3C_ALLOWED_FIELDS = [
+  "traceparent",
+  "tracestate",
+  "baggage",
+] as const;
+
+export type W3CFieldName = (typeof W3C_ALLOWED_FIELDS)[number];
+
 // This RIC is used by Nodejs24 and above, it's used by NOdejs22 only for LMI and not OD
 export const CALLBACK_ERROR_NODEJS22 =
   "ERROR: AWS Lambda does not support callback-based function handlers when using Node.js 22 with Managed Instances. To use Managed Instances, modify this function to use a supported handler signature. For more information see https://docs.aws.amazon.com/lambda/latest/dg/nodejs-handler.html.";

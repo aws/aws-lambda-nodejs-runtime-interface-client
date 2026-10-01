@@ -1,7 +1,6 @@
 import { HttpResponseStream } from "./stream/index.ts";
 
 declare global {
-  // eslint-disable-next-line no-var
   var awslambda: {
     /**
      * Marks a handler as streaming and (optionally) captures a highWaterMark.
