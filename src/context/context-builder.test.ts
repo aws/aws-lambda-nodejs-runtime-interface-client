@@ -251,8 +251,7 @@ describe("ContextBuilder", () => {
 
       // THEN
       expect(context.w3c()).toEqual({
-        traceparent:
-          "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+        traceparent: "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
         tracestate: "rojo=00f067aa0ba902b7",
         baggage: "userId=alice",
       });
@@ -378,8 +377,7 @@ describe("ContextBuilder", () => {
 
       // THEN
       expect(context.w3c()).toEqual({
-        traceparent:
-          "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+        traceparent: "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
         tracestate: "rojo=00f067aa0ba902b7",
         baggage: "userId=alice",
       });

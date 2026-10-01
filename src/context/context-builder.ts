@@ -78,11 +78,7 @@ export class ContextBuilder {
     const rawW3c = clientContext.w3c;
     delete clientContext.w3c;
 
-    if (
-      !rawW3c ||
-      typeof rawW3c !== "object" ||
-      Array.isArray(rawW3c)
-    ) {
+    if (!rawW3c || typeof rawW3c !== "object" || Array.isArray(rawW3c)) {
       return {};
     }
 

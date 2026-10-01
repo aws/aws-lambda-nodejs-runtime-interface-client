@@ -11,8 +11,7 @@ export const getW3cAndSource = async (_event, context) => {
   return {
     w3c: context.w3c(),
     clientContextIsDefined: clientContext !== undefined,
-    clientContextHasW3c:
-      clientContext !== undefined && "w3c" in clientContext,
+    clientContextHasW3c: clientContext !== undefined && "w3c" in clientContext,
     clientContext: clientContext ?? null,
   };
 };

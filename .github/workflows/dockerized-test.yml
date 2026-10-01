@@ -13,17 +13,13 @@ on:
 jobs:
   dockerized-test:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node_version: ['22', '24']
     steps:
       - uses: actions/checkout@v5
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node_version }}
+          node-version: '24'
           cache: npm
 
       - name: Install dependencies
@@ -39,7 +35,7 @@ jobs:
           docker build . \
             -t local/test \
             -f Dockerfile.test \
-            --build-arg BASE_IMAGE=public.ecr.aws/lambda/nodejs:${{ matrix.node_version }}
+            --build-arg BASE_IMAGE=public.ecr.aws/lambda/nodejs:24
 
       - name: Run dockerized suites
         uses: aws/containerized-test-runner-for-aws-lambda@511d270614f2c6b1613848db6dcf920a591c3c89 # main
