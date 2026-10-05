@@ -20,6 +20,12 @@ export const echoClientContext = async (_event, context) => {
   return context.clientContext ?? null;
 };
 
-export const w3cIsFunction = async (_event, context) => {
-  return { isFunction: typeof context.w3c === "function" };
+export const w3cShape = async (_event, context) => {
+  const value = context.w3c();
+  return {
+    typeofW3c: typeof context.w3c,
+    typeofResult: typeof value,
+    isFrozen: Object.isFrozen(value),
+    isObject: value !== null && typeof value === "object",
+  };
 };

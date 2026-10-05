@@ -4,6 +4,7 @@ import {
   REQUIRED_ENV_VARS,
   REQUIRED_INVOKE_HEADERS,
   W3C_ALLOWED_FIELDS,
+  W3CFields,
   W3CFieldName,
 } from "./constants.js";
 import { InvokeContext, InvokeHeaders } from "./types.js";
@@ -54,33 +55,33 @@ export class ContextBuilder {
       getRemainingTimeInMillis: function () {
         return deadline - Date.now();
       },
-      w3c: function (): Partial<Record<W3CFieldName, string>> {
-        return { ...w3cFields };
+      w3c: function (): W3CFields {
+        return w3cFields;
       },
     };
   }
 
   /**
-   * Pulls `w3c` out of the parsed `clientContext` and returns a normalized
-   * copy of the allowlisted string fields (see `W3C_ALLOWED_FIELDS`). The
-   * `w3c` key is removed from `clientContext` itself so callers cannot read
-   * the source through `context.clientContext`.
+   * Pulls `w3c` out of the parsed `clientContext` and returns a frozen,
+   * normalized copy of the allowlisted string fields (see
+   * `W3C_ALLOWED_FIELDS`). The `w3c` key is removed from `clientContext`
+   * itself so callers cannot read the source through `context.clientContext`.
    */
   private static extractAndStripW3c(
     clientContext: Record<string, unknown> | undefined,
-  ): Partial<Record<W3CFieldName, string>> {
+  ): W3CFields {
     if (!clientContext || typeof clientContext !== "object") {
-      return {};
+      return Object.freeze({});
     }
     if (!("w3c" in clientContext)) {
-      return {};
+      return Object.freeze({});
     }
 
     const rawW3c = clientContext.w3c;
     delete clientContext.w3c;
 
     if (!rawW3c || typeof rawW3c !== "object" || Array.isArray(rawW3c)) {
-      return {};
+      return Object.freeze({});
     }
 
     const source = rawW3c as Record<string, unknown>;
@@ -91,7 +92,7 @@ export class ContextBuilder {
         fields[key] = value;
       }
     }
-    return fields;
+    return Object.freeze(fields);
   }
 
   private static parseDeadline(invokeHeaders: InvokeHeaders) {

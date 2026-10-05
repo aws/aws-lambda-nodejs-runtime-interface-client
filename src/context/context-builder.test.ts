@@ -339,7 +339,7 @@ describe("ContextBuilder", () => {
       expect(context.clientContext).not.toHaveProperty("w3c");
     });
 
-    it("should return a fresh copy so callers cannot mutate the underlying map", () => {
+    it("should expose a frozen object so callers cannot mutate the fields", () => {
       // GIVEN
       const headers = {
         ...mockValidHeaders,
@@ -350,11 +350,22 @@ describe("ContextBuilder", () => {
 
       // WHEN
       const context = ContextBuilder.build(headers);
-      const first = context.w3c();
-      first["baggage"] = "tampered";
-      first["injected"] = "nope";
 
-      // THEN
+      // THEN — the object is frozen
+      expect(Object.isFrozen(context.w3c())).toBe(true);
+
+      // AND — attempts to write silently no-op in sloppy mode and throw in
+      // strict mode. The test file is a strict ESM TypeScript module, so
+      // both overwriting an existing key and adding a new one throw.
+      const mutable = context.w3c() as Record<string, string>;
+      expect(() => {
+        mutable["baggage"] = "tampered";
+      }).toThrow(TypeError);
+      expect(() => {
+        mutable["injected"] = "nope";
+      }).toThrow(TypeError);
+
+      // AND — the value is unchanged.
       expect(context.w3c()).toEqual({ baggage: "abc" });
     });
 

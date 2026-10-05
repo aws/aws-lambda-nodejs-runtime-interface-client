@@ -31,6 +31,7 @@ export const W3C_ALLOWED_FIELDS = [
 ] as const;
 
 export type W3CFieldName = (typeof W3C_ALLOWED_FIELDS)[number];
+export type W3CFields = Readonly<Partial<Record<W3CFieldName, string>>>;
 
 // This RIC is used by Nodejs24 and above, it's used by NOdejs22 only for LMI and not OD
 export const CALLBACK_ERROR_NODEJS22 =

@@ -1,11 +1,11 @@
 {
   "tests": [
     {
-      "name": "w3c_is_a_function_on_context",
-      "handler": "w3c.w3cIsFunction",
+      "name": "w3c_is_a_function_returning_a_frozen_object",
+      "handler": "w3c.w3cShape",
       "request": {},
       "assertions": [
-        { "response": { "isFunction": true } }
+        { "response": { "typeofW3c": "function", "typeofResult": "object", "isFrozen": true, "isObject": true } }
       ]
     },
 
