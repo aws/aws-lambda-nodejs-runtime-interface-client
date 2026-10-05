@@ -4,6 +4,7 @@ import {
   REQUIRED_ENV_VARS,
   REQUIRED_INVOKE_HEADERS,
   W3C_ALLOWED_FIELDS,
+  W3CFieldName,
 } from "./constants.js";
 import { InvokeContext, InvokeHeaders } from "./types.js";
 
@@ -53,7 +54,7 @@ export class ContextBuilder {
       getRemainingTimeInMillis: function () {
         return deadline - Date.now();
       },
-      w3c: function (): Record<string, string> {
+      w3c: function (): Partial<Record<W3CFieldName, string>> {
         return { ...w3cFields };
       },
     };
@@ -67,7 +68,7 @@ export class ContextBuilder {
    */
   private static extractAndStripW3c(
     clientContext: Record<string, unknown> | undefined,
-  ): Record<string, string> {
+  ): Partial<Record<W3CFieldName, string>> {
     if (!clientContext || typeof clientContext !== "object") {
       return {};
     }
@@ -83,7 +84,7 @@ export class ContextBuilder {
     }
 
     const source = rawW3c as Record<string, unknown>;
-    const fields: Record<string, string> = {};
+    const fields: Partial<Record<W3CFieldName, string>> = {};
     for (const key of W3C_ALLOWED_FIELDS) {
       const value = source[key];
       if (typeof value === "string") {
