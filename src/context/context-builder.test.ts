@@ -60,6 +60,7 @@ describe("ContextBuilder", () => {
 
         // Methods
         getRemainingTimeInMillis: expect.any(Function),
+        w3c: expect.any(Function),
       });
     });
 
@@ -180,6 +181,283 @@ describe("ContextBuilder", () => {
         }),
       );
       expect(envUtils.moveXRayHeaderToEnv).toHaveBeenCalled();
+    });
+  });
+
+  describe("w3c", () => {
+    it("should return {} when no clientContext header is provided", () => {
+      // GIVEN
+      const headersWithoutClientContext: Record<string, string> = {
+        ...mockValidHeaders,
+      };
+      delete headersWithoutClientContext[HEADERS.CLIENT_CONTEXT];
+
+      // WHEN
+      const context = ContextBuilder.build(headersWithoutClientContext);
+
+      // THEN
+      expect(context.w3c()).toEqual({});
+    });
+
+    it("should return {} when clientContext has no w3c key", () => {
+      // GIVEN
+      const headers = {
+        ...mockValidHeaders,
+        [HEADERS.CLIENT_CONTEXT]: JSON.stringify({ custom: { value: "test" } }),
+      };
+
+      // WHEN
+      const context = ContextBuilder.build(headers);
+
+      // THEN
+      expect(context.w3c()).toEqual({});
+      // clientContext is untouched when there was nothing to strip
+      expect(context.clientContext).toEqual({ custom: { value: "test" } });
+    });
+
+    it("should return {baggage:'abc'} when only baggage is set", () => {
+      // GIVEN
+      const headers = {
+        ...mockValidHeaders,
+        [HEADERS.CLIENT_CONTEXT]: JSON.stringify({
+          w3c: { baggage: "abc" },
+        }),
+      };
+
+      // WHEN
+      const context = ContextBuilder.build(headers);
+
+      // THEN
+      expect(context.w3c()).toEqual({ baggage: "abc" });
+    });
+
+    it("should return every w3c field carried on clientContext", () => {
+      // GIVEN
+      const headers = {
+        ...mockValidHeaders,
+        [HEADERS.CLIENT_CONTEXT]: JSON.stringify({
+          custom: { value: "test" },
+          w3c: {
+            traceparent:
+              "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+            tracestate: "rojo=00f067aa0ba902b7",
+            baggage: "userId=alice",
+          },
+        }),
+      };
+
+      // WHEN
+      const context = ContextBuilder.build(headers);
+
+      // THEN
+      expect(context.w3c()).toEqual({
+        traceparent: "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+        tracestate: "rojo=00f067aa0ba902b7",
+        baggage: "userId=alice",
+      });
+    });
+
+    it("should remove the source clientContext.w3c (and nested fields) after construction", () => {
+      // GIVEN
+      const headers = {
+        ...mockValidHeaders,
+        [HEADERS.CLIENT_CONTEXT]: JSON.stringify({
+          custom: { value: "test" },
+          w3c: {
+            traceparent:
+              "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+            baggage: "userId=alice",
+          },
+        }),
+      };
+
+      // WHEN
+      const context = ContextBuilder.build(headers);
+
+      // THEN
+      expect(context.clientContext).toBeDefined();
+      expect(context.clientContext).not.toHaveProperty("w3c");
+      expect(
+        (context.clientContext as Record<string, unknown>)["w3c"],
+      ).toBeUndefined();
+      // Sibling clientContext fields are preserved
+      expect(context.clientContext).toEqual({ custom: { value: "test" } });
+    });
+
+    it("should ignore non-string w3c field values while still stripping the source", () => {
+      // GIVEN
+      const headers = {
+        ...mockValidHeaders,
+        [HEADERS.CLIENT_CONTEXT]: JSON.stringify({
+          w3c: {
+            baggage: "abc",
+            traceparent: 42, // wrong type — must be dropped
+            tracestate: null, // wrong type — must be dropped
+          },
+        }),
+      };
+
+      // WHEN
+      const context = ContextBuilder.build(headers);
+
+      // THEN
+      expect(context.w3c()).toEqual({ baggage: "abc" });
+      expect(context.clientContext).not.toHaveProperty("w3c");
+    });
+
+    it("should treat a non-object w3c value as empty and still strip the source", () => {
+      // GIVEN
+      const headers = {
+        ...mockValidHeaders,
+        [HEADERS.CLIENT_CONTEXT]: JSON.stringify({
+          w3c: "not-an-object",
+        }),
+      };
+
+      // WHEN
+      const context = ContextBuilder.build(headers);
+
+      // THEN
+      expect(context.w3c()).toEqual({});
+      expect(context.clientContext).not.toHaveProperty("w3c");
+    });
+
+    it("should treat an array w3c value as empty and still strip the source", () => {
+      // GIVEN
+      const headers = {
+        ...mockValidHeaders,
+        [HEADERS.CLIENT_CONTEXT]: JSON.stringify({
+          w3c: ["baggage=abc"],
+        }),
+      };
+
+      // WHEN
+      const context = ContextBuilder.build(headers);
+
+      // THEN
+      expect(context.w3c()).toEqual({});
+      expect(context.clientContext).not.toHaveProperty("w3c");
+    });
+
+    it("should expose a frozen object so callers cannot mutate the fields", () => {
+      // GIVEN
+      const headers = {
+        ...mockValidHeaders,
+        [HEADERS.CLIENT_CONTEXT]: JSON.stringify({
+          w3c: { baggage: "abc" },
+        }),
+      };
+
+      // WHEN
+      const context = ContextBuilder.build(headers);
+
+      // THEN — the object is frozen
+      expect(Object.isFrozen(context.w3c())).toBe(true);
+
+      // AND — attempts to write silently no-op in sloppy mode and throw in
+      // strict mode. The test file is a strict ESM TypeScript module, so
+      // both overwriting an existing key and adding a new one throw.
+      const mutable = context.w3c() as Record<string, string>;
+      expect(() => {
+        mutable["baggage"] = "tampered";
+      }).toThrow(TypeError);
+      expect(() => {
+        mutable["injected"] = "nope";
+      }).toThrow(TypeError);
+
+      // AND — the value is unchanged.
+      expect(context.w3c()).toEqual({ baggage: "abc" });
+    });
+
+    it("should only surface the allowlisted fields (traceparent, tracestate, baggage)", () => {
+      // GIVEN — every allowlisted field set, plus a non-allowlisted one
+      const headers = {
+        ...mockValidHeaders,
+        [HEADERS.CLIENT_CONTEXT]: JSON.stringify({
+          w3c: {
+            traceparent:
+              "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+            tracestate: "rojo=00f067aa0ba902b7",
+            baggage: "userId=alice",
+          },
+        }),
+      };
+
+      // WHEN
+      const context = ContextBuilder.build(headers);
+
+      // THEN
+      expect(context.w3c()).toEqual({
+        traceparent: "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+        tracestate: "rojo=00f067aa0ba902b7",
+        baggage: "userId=alice",
+      });
+    });
+
+    it("should drop non-allowlisted w3c keys even when the value is a valid string", () => {
+      // GIVEN
+      const headers = {
+        ...mockValidHeaders,
+        [HEADERS.CLIENT_CONTEXT]: JSON.stringify({
+          w3c: {
+            baggage: "keep=me",
+            // Non-allowlisted keys — must NOT be surfaced by w3c()
+            unknownField: "should-not-appear",
+            "x-custom-trace": "should-not-appear",
+            __proto__: "should-not-appear",
+            constructor: "should-not-appear",
+            toString: "should-not-appear",
+          },
+        }),
+      };
+
+      // WHEN
+      const context = ContextBuilder.build(headers);
+
+      // THEN
+      expect(context.w3c()).toEqual({ baggage: "keep=me" });
+      // Source is still stripped regardless
+      expect(context.clientContext).not.toHaveProperty("w3c");
+    });
+
+    it("should omit allowlisted keys when they are absent (no undefined leaks)", () => {
+      // GIVEN — only baggage present
+      const headers = {
+        ...mockValidHeaders,
+        [HEADERS.CLIENT_CONTEXT]: JSON.stringify({
+          w3c: { baggage: "abc" },
+        }),
+      };
+
+      // WHEN
+      const context = ContextBuilder.build(headers);
+
+      // THEN
+      const result = context.w3c();
+      expect(result).toEqual({ baggage: "abc" });
+      expect("traceparent" in result).toBe(false);
+      expect("tracestate" in result).toBe(false);
+    });
+
+    it("should drop allowlisted keys whose value is not a string", () => {
+      // GIVEN — every allowlisted key present, but with wrong types
+      const headers = {
+        ...mockValidHeaders,
+        [HEADERS.CLIENT_CONTEXT]: JSON.stringify({
+          w3c: {
+            traceparent: 42,
+            tracestate: null,
+            baggage: { nested: "no" },
+          },
+        }),
+      };
+
+      // WHEN
+      const context = ContextBuilder.build(headers);
+
+      // THEN
+      expect(context.w3c()).toEqual({});
+      expect(context.clientContext).not.toHaveProperty("w3c");
     });
   });
 

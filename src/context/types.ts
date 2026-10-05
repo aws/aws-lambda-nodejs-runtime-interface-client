@@ -2,6 +2,7 @@ import { WritableResponseStream } from "../stream/index.js";
 import {
   OPTIONAL_INVOKE_HEADERS,
   REQUIRED_INVOKE_HEADERS,
+  W3CFields,
 } from "./constants.js";
 
 export interface InvokeHeaders {
@@ -35,6 +36,12 @@ export interface InvokeContext {
 
   // Methods
   getRemainingTimeInMillis(): number;
+
+  /**
+   * Returns the W3C trace context fields (traceparent, tracestate, baggage)
+   * that were carried on `clientContext.w3c` at invoke time.
+   */
+  w3c(): W3CFields;
 }
 
 export interface StreamOptions {

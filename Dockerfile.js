@@ -23,11 +23,11 @@ RUN mkdir -p /build && \
     ls -R /build/deps
 
 # Copy bare config
-COPY package.json tsconfig.json eslint.config.js vitest.config.js vitest.setup.ts  /app/
+COPY package.json package-lock.json tsconfig.json eslint.config.js vitest.config.js vitest.setup.ts  /app/
 
 WORKDIR /app
 
-RUN npm install --ignore-scripts
+RUN npm ci --ignore-scripts
 
 COPY src /app/src
 COPY scripts/build.js /app/scripts/build.js

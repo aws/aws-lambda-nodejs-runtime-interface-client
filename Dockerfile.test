@@ -1,0 +1,11 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+ARG BASE_IMAGE=public.ecr.aws/lambda/nodejs:24
+FROM $BASE_IMAGE
+
+# Swap the RIC shipped in the base image for the one we just built.
+ADD build-artifacts/aws-lambda-ric-*.tgz /tmp/
+RUN mv /tmp/package/* /var/runtime/ && rm -rf /tmp/package
+
+COPY test/dockerized/tasks /var/task/
