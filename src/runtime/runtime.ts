@@ -6,10 +6,15 @@ import {
   StreamingHandler,
   UserHandler,
 } from "./types.js";
+import { EventAndContext } from "../context/types.js";
 import { InvokeStore, InvokeStoreBase } from "@aws/lambda-invoke-store";
 import { LifecycleManager } from "./lifecycle-manager.js";
 import { BufferedInvokeProcessor } from "./buffered-invoke-processor.js";
 import { StreamingInvokeProcessor } from "./streaming-invoke-processor.js";
+import { logger } from "../logging/verbose-log.js";
+import { getPollingCount } from "../utils/env.js";
+
+const log = logger("RUNTIME");
 
 export class Runtime {
   public static create({
@@ -75,9 +80,32 @@ export class Runtime {
   private async processMultiConcurrent(
     processor: InvokeProcessor,
   ): Promise<void> {
-    while (true) {
-      const { context, event } = await this.lifecycle.next();
+    const pollingCount = getPollingCount();
+    log.vvverbose(`Multi-concurrent polling count: ${pollingCount}`);
 
+    const pendingNextCalls = new Set<Promise<EventAndContext>>();
+
+    // Fill initial pending /next calls
+    while (pendingNextCalls.size < pollingCount) {
+      pendingNextCalls.add(this.lifecycle.next());
+    }
+
+    while (true) {
+      // Wait for any pending /next to return with an invocation
+      const resolved = await Promise.race(
+        [...pendingNextCalls].map((p) =>
+          p.then((result) => ({ promise: p, result })),
+        ),
+      );
+
+      // Remove the resolved promise from tracking
+      pendingNextCalls.delete(resolved.promise);
+
+      // Replenish: fire replacement /next BEFORE dispatching handler
+      pendingNextCalls.add(this.lifecycle.next());
+
+      // Dispatch handler via setImmediate (fire-and-forget)
+      const { context, event } = resolved.result;
       setImmediate(async () => {
         await this.runWithInvokeContext(
           context.awsRequestId,

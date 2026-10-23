@@ -1,5 +1,6 @@
 import { HEADERS } from "../context/index.js";
 import { InvokeHeaders } from "../context/types.js";
+import { DEFAULT_POLLING_COUNT } from "../context/constants.js";
 import {
   LogFormat,
   LOG_FORMAT,
@@ -33,6 +34,60 @@ export function consumeTelemetryFd(): number | undefined {
 
 export function isMultiConcurrentMode(): boolean {
   return process.env["AWS_LAMBDA_MAX_CONCURRENCY"] !== undefined;
+}
+
+// Default polling count is 4. Override via AWS_LAMBDA_NODEJS_POLLING_COUNT.
+// Capped at AWS_LAMBDA_MAX_CONCURRENCY to prevent excessive connections to RAPID.
+export function getPollingCount(): number {
+  const maxConcurrency = parseInt(
+    process.env["AWS_LAMBDA_MAX_CONCURRENCY"] || "0",
+    10,
+  );
+  const envValue = process.env["AWS_LAMBDA_NODEJS_POLLING_COUNT"];
+  if (envValue) {
+    const parsed = parseInt(envValue, 10);
+    if (!parsed || parsed <= 0) {
+      console.warn(
+        `Invalid AWS_LAMBDA_NODEJS_POLLING_COUNT="${envValue}", using default ${DEFAULT_POLLING_COUNT}`,
+      );
+      return DEFAULT_POLLING_COUNT;
+    }
+    if (maxConcurrency > 0 && parsed > maxConcurrency) {
+      console.warn(
+        `AWS_LAMBDA_NODEJS_POLLING_COUNT=${parsed} exceeds MC=${maxConcurrency}, capping`,
+      );
+      return maxConcurrency;
+    }
+    return parsed;
+  }
+  return DEFAULT_POLLING_COUNT;
+}
+
+// Override via AWS_LAMBDA_NODEJS_WORKER_COUNT.
+// Capped at AWS_LAMBDA_MAX_CONCURRENCY to prevent spawning more workers than MC.
+export function getWorkerCountFromEnv(): number | undefined {
+  const envValue = process.env["AWS_LAMBDA_NODEJS_WORKER_COUNT"];
+  if (!envValue) return undefined;
+
+  const parsed = parseInt(envValue, 10);
+  if (!parsed || parsed <= 0) {
+    console.warn(
+      `Invalid AWS_LAMBDA_NODEJS_WORKER_COUNT="${envValue}", ignoring`,
+    );
+    return undefined;
+  }
+
+  const maxConcurrency = parseInt(
+    process.env["AWS_LAMBDA_MAX_CONCURRENCY"] || "0",
+    10,
+  );
+  if (maxConcurrency > 0 && parsed > maxConcurrency) {
+    console.warn(
+      `AWS_LAMBDA_NODEJS_WORKER_COUNT=${parsed} exceeds MC=${maxConcurrency}, capping`,
+    );
+    return maxConcurrency;
+  }
+  return parsed;
 }
 
 export function moveXRayHeaderToEnv(headers: InvokeHeaders) {

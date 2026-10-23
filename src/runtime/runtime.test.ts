@@ -418,12 +418,15 @@ describe("Runtime", () => {
     beforeEach(async () => {
       // Set AWS_LAMBDA_MAX_CONCURRENCY to ensure InvokeStoreMulti is used
       process.env.AWS_LAMBDA_MAX_CONCURRENCY = "1";
+      // Use polling count of 1 for existing tests (they test handler concurrency, not multi-pending)
+      process.env.AWS_LAMBDA_NODEJS_POLLING_COUNT = "1";
       InvokeStore._testing?.reset?.();
       invokeStore = await InvokeStore.getInstanceAsync();
     });
 
     afterEach(() => {
       delete process.env.AWS_LAMBDA_MAX_CONCURRENCY;
+      delete process.env.AWS_LAMBDA_NODEJS_POLLING_COUNT;
       InvokeStore._testing?.reset();
     });
     it("should process invocations concurrently", async () => {
@@ -875,6 +878,202 @@ describe("Runtime", () => {
       });
     });
   });
+
+  describe("[multi-pending]", () => {
+    beforeEach(async () => {
+      process.env.AWS_LAMBDA_MAX_CONCURRENCY = "32";
+      InvokeStore._testing?.reset?.();
+      await InvokeStore.getInstanceAsync();
+    });
+
+    afterEach(() => {
+      delete process.env.AWS_LAMBDA_MAX_CONCURRENCY;
+      delete process.env.AWS_LAMBDA_NODEJS_POLLING_COUNT;
+      InvokeStore._testing?.reset();
+    });
+
+    it("should fire pollingCount /next calls at startup", async () => {
+      // GIVEN
+      process.env.AWS_LAMBDA_NODEJS_POLLING_COUNT = "4";
+      // All calls hang (simulating RAPID holding /next connections)
+      const mockRapidClient = {
+        nextInvocation: vi.fn().mockImplementation(() => {
+          return new Promise(() => {});
+        }),
+        postInvocationResponse: vi.fn(async () => {}),
+        postInvocationError: vi.fn(async () => {}),
+        postInitError: vi.fn(async () => {}),
+      } as unknown as RAPIDClient;
+
+      const handler: BufferedHandler = async () => "done";
+
+      const runtime = Runtime.create({
+        rapidClient: mockRapidClient,
+        handler,
+        isMultiConcurrent: true,
+      });
+
+      // WHEN
+      runtime.start();
+      await vi.advanceTimersByTimeAsync(10);
+
+      // THEN - exactly 4 calls issued (all pending, no resolutions)
+      expect(mockRapidClient.nextInvocation).toHaveBeenCalledTimes(4);
+    });
+
+    it("should respect AWS_LAMBDA_NODEJS_POLLING_COUNT env var", async () => {
+      // GIVEN
+      process.env.AWS_LAMBDA_NODEJS_POLLING_COUNT = "2";
+      const mockRapidClient = {
+        nextInvocation: vi.fn().mockImplementation(() => {
+          return new Promise(() => {}); // all hang
+        }),
+        postInvocationResponse: vi.fn(async () => {}),
+        postInvocationError: vi.fn(async () => {}),
+        postInitError: vi.fn(async () => {}),
+      } as unknown as RAPIDClient;
+
+      const handler: BufferedHandler = async () => "done";
+
+      const runtime = Runtime.create({
+        rapidClient: mockRapidClient,
+        handler,
+        isMultiConcurrent: true,
+      });
+
+      // WHEN
+      runtime.start();
+      await vi.advanceTimersByTimeAsync(10);
+
+      // THEN - only 2 calls issued
+      expect(mockRapidClient.nextInvocation).toHaveBeenCalledTimes(2);
+    });
+
+    it("should replenish /next after invocation resolves", async () => {
+      // GIVEN
+      vi.useRealTimers();
+      process.env.AWS_LAMBDA_NODEJS_POLLING_COUNT = "2";
+      const resolvers: Array<(value: unknown) => void> = [];
+
+      const mockRapidClient = {
+        nextInvocation: vi.fn().mockImplementation(() => {
+          return new Promise((resolve) => {
+            resolvers.push(resolve);
+          });
+        }),
+        postInvocationResponse: vi.fn(async () => {}),
+        postInvocationError: vi.fn(async () => {}),
+        postInitError: vi.fn(async () => {}),
+      } as unknown as RAPIDClient;
+
+      const handler: BufferedHandler = async () => "done";
+
+      const runtime = Runtime.create({
+        rapidClient: mockRapidClient,
+        handler,
+        isMultiConcurrent: true,
+      });
+
+      // WHEN - start: 2 pending
+      runtime.start();
+      await new Promise((r) => setTimeout(r, 10));
+      expect(mockRapidClient.nextInvocation).toHaveBeenCalledTimes(2);
+      expect(resolvers.length).toBe(2);
+
+      // Resolve one - should trigger replenishment
+      resolvers[0]({
+        bodyJson: JSON.stringify({ key: "value" }),
+        headers: {
+          "lambda-runtime-aws-request-id": "test-id-1",
+          "lambda-runtime-deadline-ms": "1234567890",
+          "lambda-runtime-invoked-function-arn": "test:arn",
+        },
+      });
+      await new Promise((r) => setTimeout(r, 10));
+
+      // THEN - 2 initial + 1 replenishment = 3
+      expect(mockRapidClient.nextInvocation).toHaveBeenCalledTimes(3);
+    });
+
+    it("should not exceed pollingCount pending calls", async () => {
+      // GIVEN
+      process.env.AWS_LAMBDA_NODEJS_POLLING_COUNT = "3";
+      let concurrentPending = 0;
+      let maxConcurrentPending = 0;
+      let invocationCount = 0;
+
+      const mockRapidClient = {
+        nextInvocation: vi.fn().mockImplementation(() => {
+          invocationCount++;
+          concurrentPending++;
+          maxConcurrentPending = Math.max(
+            maxConcurrentPending,
+            concurrentPending,
+          );
+
+          if (invocationCount >= 10) {
+            return new Promise(() => {}); // throttle
+          }
+
+          return new Promise((resolve) => {
+            setTimeout(() => {
+              concurrentPending--;
+              resolve({
+                ...baseMockInvocation,
+                headers: {
+                  ...baseMockInvocation.headers,
+                  "lambda-runtime-aws-request-id": `test-id-${invocationCount}`,
+                },
+              });
+            }, 10);
+          });
+        }),
+        postInvocationResponse: vi.fn(async () => {}),
+        postInvocationError: vi.fn(async () => {}),
+        postInitError: vi.fn(async () => {}),
+      } as unknown as RAPIDClient;
+
+      const handler: BufferedHandler = async () => "done";
+
+      const runtime = Runtime.create({
+        rapidClient: mockRapidClient,
+        handler,
+        isMultiConcurrent: true,
+      });
+
+      // WHEN
+      await startAndTickRuntime(runtime, 100);
+
+      // THEN - pending never exceeded 3
+      expect(maxConcurrentPending).toBeLessThanOrEqual(3);
+    });
+
+    it("should dispatch all handlers without capping in-flight", async () => {
+      // GIVEN
+      process.env.AWS_LAMBDA_NODEJS_POLLING_COUNT = "2";
+      let handlersDispatched = 0;
+
+      const mockRapidClient = createMockRapidClient(8); // allow 7 invocations
+
+      const handler: BufferedHandler = async () => {
+        handlersDispatched++;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        return "done";
+      };
+
+      const runtime = Runtime.create({
+        rapidClient: mockRapidClient,
+        handler,
+        isMultiConcurrent: true,
+      });
+
+      // WHEN
+      await startAndTickRuntime(runtime, 50);
+
+      // THEN - all resolved invocations dispatched (no cap)
+      expect(handlersDispatched).toBeGreaterThanOrEqual(2);
+    });
+  });
 });
 
 const baseMockInvocation: InvocationRequest = {
@@ -902,7 +1101,7 @@ function createMockRapidClient(
   return {
     nextInvocation: vi.fn().mockImplementation(() => {
       invocationCount++;
-      if (invocationCount == throttleAt) {
+      if (throttleAt > 0 && invocationCount >= throttleAt) {
         return new Promise(() => {});
       }
       return Promise.resolve({

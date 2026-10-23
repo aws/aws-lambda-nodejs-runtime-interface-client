@@ -39,3 +39,7 @@ export const CALLBACK_ERROR_NODEJS22 =
 
 export const CALLBACK_ERROR_NODEJS24_ABOVE =
   "ERROR: AWS Lambda has removed support for callback-based function handlers starting with Node.js 24. You need to modify this function to use a supported handler signature to use Node.js 24 or later. For more information see https://docs.aws.amazon.com/lambda/latest/dg/nodejs-handler.html.";
+
+// Number of concurrent /next calls to keep pending in multi-concurrent mode.
+// Override via AWS_LAMBDA_NODEJS_POLLING_COUNT env var.
+export const DEFAULT_POLLING_COUNT = 4;
