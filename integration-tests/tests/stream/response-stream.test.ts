@@ -278,7 +278,7 @@ describe("response-stream", () => {
               hostname: "127.0.0.1",
               port,
               path: "/asd/efg",
-              highWaterMark: 16,
+              highWaterMark: 1024,
             },
           });
 
@@ -810,5 +810,136 @@ describe("response-stream", () => {
         expect(recorded[0].body.toString("utf8")).toBe(expected);
       },
     );
+  });
+
+  describe("highWaterMark enforcement", () => {
+    it("does not deadlock when highWaterMark > default and drain is awaited", async () => {
+      await withTestServer(
+        (req, res) => {
+          req.once("end", () => {
+            res.writeHead(200, { "Content-Type": "text/plain" });
+            res.end();
+          });
+        },
+
+        async (port, recorded) => {
+          // GIVEN: highWaterMark 100KB, writing 64KB chunks
+          // This specifically tests the pre-socket-connect path (Path B).
+          // Without the fix, on Node 24.16+, this deadlocks because:
+          // - OM default (64KB) < chunk (64KB + overhead) → write() returns false
+          // - Socket HWM (100KB) > chunk → socket never backpressured
+          // - Socket never emits drain → customer hangs forever
+          const { request, responseDone } = createResponseStream({
+            httpOptions: {
+              http,
+              agent: new http.Agent(),
+              method: "POST",
+              hostname: "127.0.0.1",
+              port,
+              path: "/asd/efg",
+              highWaterMark: 100000,
+            },
+          });
+
+          // WHEN: write chunks and properly handle backpressure
+          const chunk = Buffer.alloc(64 * 1024, "x");
+          for (let i = 0; i < 10; i++) {
+            const ok = request.write(chunk);
+            if (!ok) {
+              await new Promise<void>((resolve) =>
+                request.once("drain", resolve),
+              );
+            }
+          }
+
+          // THEN: should complete without deadlock
+          request.end();
+          await responseDone.catch(() => {});
+
+          expect(recorded).toHaveLength(1);
+          // 10 chunks of 64KB = 640KB + chunked encoding overhead
+          expect(recorded[0].body.length).toBeGreaterThanOrEqual(640 * 1024);
+        },
+      );
+    });
+
+    it("write returns true for chunk below custom highWaterMark even before socket connects", async () => {
+      await withTestServer(
+        (req, res) => {
+          req.once("end", () => {
+            res.writeHead(200, { "Content-Type": "text/plain" });
+            res.end();
+          });
+        },
+
+        async (port, recorded) => {
+          // GIVEN: highWaterMark 200KB, writing 80KB immediately (no await)
+          // The first write happens before socket connects (Path B in _writeRaw).
+          // Without the fix: OM uses default 64KB, 80KB > 64KB → returns false
+          // With the fix: OM uses 200KB, 80KB < 200KB → returns true
+          const { request, responseDone } = createResponseStream({
+            httpOptions: {
+              http,
+              agent: new http.Agent(),
+              method: "POST",
+              hostname: "127.0.0.1",
+              port,
+              path: "/asd/efg",
+              highWaterMark: 200000,
+            },
+          });
+
+          // WHEN: write 80KB synchronously (before socket connects)
+          const chunk = Buffer.alloc(80 * 1024, "x");
+          const result = request.write(chunk);
+
+          // THEN: should return true (80KB < 200KB custom HWM)
+          expect(result).toBe(true);
+
+          request.end();
+          await responseDone.catch(() => {});
+          expect(recorded).toHaveLength(1);
+        },
+      );
+    });
+
+    it("write returns false for chunk above low custom highWaterMark", async () => {
+      await withTestServer(
+        (req, res) => {
+          req.once("end", () => {
+            res.writeHead(200, { "Content-Type": "text/plain" });
+            res.end();
+          });
+        },
+
+        async (port, recorded) => {
+          // GIVEN: highWaterMark 512 bytes, writing 2KB
+          // Without the fix: OM uses default 64KB, 2KB < 64KB → returns true (HWM ignored)
+          // With the fix: OM uses 512, 2KB > 512 → returns false (HWM enforced)
+          const { request, responseDone } = createResponseStream({
+            httpOptions: {
+              http,
+              agent: new http.Agent(),
+              method: "POST",
+              hostname: "127.0.0.1",
+              port,
+              path: "/asd/efg",
+              highWaterMark: 512,
+            },
+          });
+
+          // WHEN: write 2KB synchronously
+          const chunk = Buffer.alloc(2048, "x");
+          const result = request.write(chunk);
+
+          // THEN: should return false (2KB > 512 custom HWM)
+          expect(result).toBe(false);
+
+          request.end();
+          await responseDone.catch(() => {});
+          expect(recorded).toHaveLength(1);
+        },
+      );
+    });
   });
 });
