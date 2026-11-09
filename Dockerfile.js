@@ -22,8 +22,8 @@ RUN mkdir -p /build && \
     tar xzf /tmp/deps.tar.gz -C /build && \
     ls -R /build/deps
 
-# Copy bare config
-COPY package.json package-lock.json tsconfig.json eslint.config.js vitest.config.js vitest.setup.ts  /app/
+# Copy dependency manifests and bare config
+COPY package.json package-lock.json tsconfig.json eslint.config.js vitest.config.js vitest.setup.ts /app/
 
 WORKDIR /app
 

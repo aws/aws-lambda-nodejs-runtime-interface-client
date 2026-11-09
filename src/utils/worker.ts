@@ -1,5 +1,6 @@
 import { logger } from "../logging/verbose-log.js";
 import { cjsRequire } from "./cjs-require.js";
+import { getWorkerCountFromEnv } from "./env.js";
 
 const { readFileSync } = cjsRequire("node:fs");
 const os = cjsRequire("node:os");
@@ -48,19 +49,18 @@ function getAvailableCpus(): number {
 }
 
 export function getWorkerCount(): number {
-  const envValue = process.env.AWS_LAMBDA_NODEJS_WORKER_COUNT;
-  if (envValue) {
-    const workerCount = parseInt(envValue, 10);
+  const envWorkerCount = getWorkerCountFromEnv();
+  if (envWorkerCount !== undefined) {
     verboseLog.vvverbose(
-      `Using AWS_LAMBDA_NODEJS_WORKER_COUNT: ${envValue} = ${workerCount} workers`,
+      `Using AWS_LAMBDA_NODEJS_WORKER_COUNT: ${envWorkerCount} workers`,
     );
-    return workerCount;
+    return envWorkerCount;
   }
 
   const detectedCpus = getAvailableCpus();
-  const calculatedWorkers = 8 * detectedCpus;
+  const calculatedWorkers = 2 * detectedCpus + 1;
   verboseLog.vvverbose(
-    `No env var set, using 8 * ${detectedCpus} = ${calculatedWorkers} workers`,
+    `No env var set, using 2 * ${detectedCpus} + 1 = ${calculatedWorkers} workers`,
   );
   return calculatedWorkers;
 }
