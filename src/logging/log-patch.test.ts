@@ -10,6 +10,7 @@ describe("LogPatch", async () => {
   const originalConsole = { ...console };
   const mockTimestamp = "2024-01-01T00:00:00.000Z";
   const mockRequestId = "test-request-id";
+  const mockTenantId = "test-tenant-id";
 
   const invokeStore = await InvokeStore.getInstanceAsync();
 
@@ -25,6 +26,7 @@ describe("LogPatch", async () => {
 
     // Mock InvokeStore
     vi.spyOn(invokeStore, "getRequestId").mockReturnValue(mockRequestId);
+    vi.spyOn(invokeStore, "getTenantId").mockReturnValue(mockTenantId);
 
     // Mock Date
     vi.spyOn(Date.prototype, "toISOString").mockReturnValue(mockTimestamp);
@@ -229,6 +231,9 @@ describe("LogPatch", async () => {
       );
       expect(process.stdout.write).toHaveBeenCalledWith(
         expect.stringContaining(`"requestId":"${mockRequestId}"`),
+      );
+      expect(process.stdout.write).toHaveBeenCalledWith(
+        expect.stringContaining(`"tenantId":"${mockTenantId}"`),
       );
       expect(process.stdout.write).toHaveBeenCalledWith(
         expect.stringContaining(`"level":"INFO"`),

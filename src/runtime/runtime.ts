@@ -67,6 +67,7 @@ export class Runtime {
       await this.runWithInvokeContext(
         context.awsRequestId,
         context.xRayTraceId,
+        context.tenantId,
         () => processor.processInvoke(context, event),
       );
     }
@@ -82,6 +83,7 @@ export class Runtime {
         await this.runWithInvokeContext(
           context.awsRequestId,
           context.xRayTraceId,
+          context.tenantId,
           () => processor.processInvoke(context, event),
         );
       });
@@ -91,6 +93,7 @@ export class Runtime {
   private async runWithInvokeContext(
     requestId: string,
     xRayTraceId: string | undefined,
+    tenantId: string | undefined,
     fn: () => Promise<void>,
   ): Promise<void> {
     const invokeStore = await InvokeStore.getInstanceAsync();
@@ -98,6 +101,7 @@ export class Runtime {
       {
         [InvokeStoreBase.PROTECTED_KEYS.REQUEST_ID]: requestId,
         [InvokeStoreBase.PROTECTED_KEYS.X_RAY_TRACE_ID]: xRayTraceId,
+        [InvokeStoreBase.PROTECTED_KEYS.TENANT_ID]: tenantId,
       },
       fn,
     );
